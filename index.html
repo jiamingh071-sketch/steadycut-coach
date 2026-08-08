@@ -1,0 +1,1229 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="12周减脂保肌训练、饮食与进度追踪工具">
+  <title>稳进 · 12周减脂保肌</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink-950: oklch(20% 0.018 255);
+      --ink-800: oklch(34% 0.018 255);
+      --ink-600: oklch(48% 0.018 255);
+      --ink-300: oklch(78% 0.012 255);
+      --ink-150: oklch(90% 0.009 255);
+      --ink-75: oklch(96% 0.006 255);
+      --paper: oklch(98.5% 0.004 255);
+      --accent-700: oklch(55% 0.19 43);
+      --accent-600: oklch(62% 0.19 43);
+      --accent-100: oklch(94% 0.04 43);
+      --positive: oklch(54% 0.14 153);
+      --negative: oklch(55% 0.18 25);
+      --warning: oklch(62% 0.14 82);
+      --bg: var(--ink-75);
+      --surface: var(--paper);
+      --surface-soft: oklch(94% 0.009 255);
+      --text: var(--ink-950);
+      --text-soft: var(--ink-600);
+      --border: var(--ink-150);
+      --border-strong: var(--ink-300);
+      --accent: var(--accent-600);
+      --accent-hover: var(--accent-700);
+      --accent-soft: var(--accent-100);
+      --space-1: 4px;
+      --space-2: 8px;
+      --space-3: 12px;
+      --space-4: 16px;
+      --space-6: 24px;
+      --space-8: 32px;
+      --space-12: 48px;
+      --radius: 12px;
+      --font-sans: Aptos, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      --font-mono: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+    }
+
+    [data-theme="dark"] {
+      color-scheme: dark;
+      --bg: oklch(17% 0.012 255);
+      --surface: oklch(21% 0.012 255);
+      --surface-soft: oklch(25% 0.014 255);
+      --text: oklch(93% 0.008 255);
+      --text-soft: oklch(72% 0.014 255);
+      --border: oklch(31% 0.015 255);
+      --border-strong: oklch(43% 0.018 255);
+      --accent: oklch(72% 0.17 48);
+      --accent-hover: oklch(78% 0.15 48);
+      --accent-soft: oklch(29% 0.06 43);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-padding-top: 88px; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      font-size: 16px;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
+    }
+    button, input, select, textarea { font: inherit; }
+    button { color: inherit; }
+    a { color: var(--accent-hover); }
+    h1, h2, h3 { margin: 0; line-height: 1.2; text-wrap: balance; }
+    p { margin: 0; text-wrap: pretty; }
+    .skip-link { position: fixed; left: var(--space-4); top: -80px; z-index: 1000; background: var(--surface); padding: var(--space-3); }
+    .skip-link:focus { top: var(--space-4); }
+
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .shell { width: min(1180px, calc(100% - 32px)); margin-inline: auto; }
+    .topbar { position: sticky; top: 0; z-index: 40; background: color-mix(in oklch, var(--bg) 92%, transparent); border-bottom: 1px solid var(--border); backdrop-filter: blur(16px); }
+    .topbar-inner { height: 72px; display: flex; align-items: center; gap: var(--space-6); }
+    .brand { display: flex; align-items: center; gap: var(--space-3); min-width: max-content; }
+    .brand-mark { width: 36px; height: 36px; display: grid; place-items: center; border-radius: var(--radius); background: var(--accent); color: oklch(98% 0 0); font: 800 13px/1 var(--font-mono); letter-spacing: -0.05em; }
+    .brand-copy strong { display: block; font-size: 16px; }
+    .brand-copy span { display: block; color: var(--text-soft); font-size: 12px; }
+    .desktop-nav { display: flex; align-items: center; gap: var(--space-1); margin-left: auto; }
+    .nav-link { min-height: 44px; display: inline-flex; align-items: center; padding: 0 var(--space-4); border: 0; border-radius: var(--radius); background: transparent; color: var(--text-soft); text-decoration: none; font-weight: 650; cursor: pointer; }
+    .nav-link:hover, .nav-link[aria-current="page"] { background: var(--surface-soft); color: var(--text); }
+    .nav-link[aria-current="page"] { box-shadow: inset 0 -2px var(--accent); }
+    .icon-button { width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); cursor: pointer; }
+    .icon-button:hover { border-color: var(--border-strong); transform: translateY(-1px); }
+    .icon-button:active, .button:active { transform: scale(.97); }
+    .icon { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+    main { padding: var(--space-8) 0 104px; }
+    .page-head { display: flex; align-items: end; justify-content: space-between; gap: var(--space-6); margin-bottom: var(--space-8); }
+    .page-head h1 { font-size: clamp(30px, 5vw, 48px); letter-spacing: -0.035em; }
+    .page-head p { max-width: 46ch; color: var(--text-soft); }
+    .eyebrow { margin-bottom: var(--space-2); color: var(--accent-hover); font: 700 12px/1.3 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
+    .date-line { color: var(--text-soft); font-size: 14px; }
+
+    .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+    .panel-pad { padding: var(--space-6); }
+    .panel-title { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); margin-bottom: var(--space-4); }
+    .panel-title h2 { font-size: 20px; }
+    .muted { color: var(--text-soft); }
+    .small { font-size: 13px; }
+    .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+    .stack { display: grid; gap: var(--space-4); }
+    .stack-lg { display: grid; gap: var(--space-6); }
+    .dashboard-grid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(300px, .8fr); gap: var(--space-6); align-items: start; }
+    .metric-strip { display: grid; grid-template-columns: repeat(4, 1fr); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: var(--space-6); overflow: hidden; }
+    .metric { padding: var(--space-4) var(--space-6); border-right: 1px solid var(--border); }
+    .metric:last-child { border-right: 0; }
+    .metric-label { color: var(--text-soft); font-size: 13px; }
+    .metric-value { margin-top: var(--space-1); font: 750 clamp(23px, 4vw, 32px)/1.2 var(--font-mono); letter-spacing: -.04em; }
+    .metric-target { color: var(--text-soft); font: 500 12px/1.4 var(--font-mono); }
+    .progress { height: 8px; margin-top: var(--space-3); background: var(--surface-soft); border-radius: var(--radius); overflow: hidden; }
+    .progress > span { display: block; height: 100%; border-radius: inherit; background: var(--accent); }
+    .progress > span.over { background: var(--negative); }
+
+    .focus-block { display: grid; grid-template-columns: 1fr auto; gap: var(--space-6); align-items: center; padding: var(--space-8); background: var(--ink-950); color: oklch(94% 0.008 255); border-radius: var(--radius); }
+    [data-theme="dark"] .focus-block { background: oklch(27% 0.02 255); }
+    .focus-block h2 { font-size: clamp(24px, 4vw, 38px); letter-spacing: -.03em; }
+    .focus-block p { max-width: 50ch; margin-top: var(--space-3); color: oklch(76% 0.012 255); }
+    .focus-meta { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-4); }
+    .chip { display: inline-flex; min-height: 32px; align-items: center; padding: 0 var(--space-3); border-radius: var(--radius); background: color-mix(in oklch, currentColor 10%, transparent); font-size: 13px; font-weight: 650; }
+    .focus-number { min-width: 112px; text-align: right; }
+    .focus-number strong { display: block; color: var(--accent); font: 800 52px/1 var(--font-mono); letter-spacing: -.07em; }
+    .focus-number span { color: oklch(76% 0.012 255); font-size: 13px; }
+
+    .button { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); padding: 0 var(--space-6); border: 1px solid transparent; border-radius: var(--radius); background: var(--accent); color: oklch(98% 0 0); font-weight: 700; text-decoration: none; white-space: nowrap; cursor: pointer; transition: transform 100ms ease-out, background 150ms ease-out, border-color 150ms ease-out; }
+    .button:hover { background: var(--accent-hover); transform: translateY(-1px); }
+    .button.secondary { background: var(--surface-soft); color: var(--text); border-color: var(--border); }
+    .button.secondary:hover { border-color: var(--border-strong); }
+    .button.ghost { background: transparent; color: var(--text-soft); border-color: var(--border); }
+    .button.danger { background: var(--negative); }
+    .button.small-button { min-height: 36px; padding-inline: var(--space-4); font-size: 13px; }
+    .button:disabled { opacity: .48; cursor: not-allowed; transform: none; }
+    .button-row { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; }
+
+    .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); }
+    .form-grid.cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .field { display: grid; gap: var(--space-2); }
+    .field.full { grid-column: 1 / -1; }
+    label, .label { color: var(--text-soft); font-size: 14px; font-weight: 650; }
+    input, select, textarea { width: 100%; min-height: 48px; padding: var(--space-3) var(--space-4); border: 1px solid var(--border-strong); border-radius: var(--radius); background: var(--surface); color: var(--text); transition: border-color 150ms ease-out; }
+    input:hover, select:hover, textarea:hover { border-color: var(--text-soft); }
+    input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+    input[type="checkbox"] { width: 22px; min-height: 22px; accent-color: var(--accent); }
+    textarea { min-height: 96px; resize: vertical; }
+    .checkline { display: flex; gap: var(--space-3); align-items: center; min-height: 44px; }
+    .input-help { color: var(--text-soft); font-size: 12px; }
+    .error-text { min-height: 18px; color: var(--negative); font-size: 13px; }
+
+    .setup-banner { display: flex; align-items: center; justify-content: space-between; gap: var(--space-6); padding: var(--space-4) var(--space-6); margin-bottom: var(--space-6); border: 1px solid color-mix(in oklch, var(--accent) 42%, var(--border)); border-radius: var(--radius); background: var(--accent-soft); }
+    .setup-banner strong { display: block; margin-bottom: var(--space-1); }
+    .setup-banner p { color: color-mix(in oklch, var(--text) 72%, var(--accent)); font-size: 14px; }
+    .list { margin: 0; padding-left: 1.25rem; }
+    .list li + li { margin-top: var(--space-2); }
+    .rule-list { display: grid; gap: var(--space-3); }
+    .rule { display: grid; grid-template-columns: 32px 1fr; gap: var(--space-3); align-items: start; }
+    .rule-index { width: 32px; height: 32px; display: grid; place-items: center; border-radius: var(--radius); background: var(--surface-soft); color: var(--accent-hover); font: 700 13px/1 var(--font-mono); }
+
+    .day-tabs { display: flex; gap: var(--space-2); overflow-x: auto; padding-bottom: var(--space-2); margin-bottom: var(--space-6); scrollbar-width: thin; }
+    .day-tab { min-height: 44px; min-width: max-content; padding: 0 var(--space-4); border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); cursor: pointer; }
+    .day-tab[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: oklch(98% 0 0); }
+    .exercise-list { display: grid; gap: var(--space-4); }
+    .exercise { padding: var(--space-4); border-top: 1px solid var(--border); }
+    .exercise:first-child { border-top: 0; }
+    .exercise-head { display: flex; align-items: start; justify-content: space-between; gap: var(--space-4); margin-bottom: var(--space-4); }
+    .exercise-head h3 { font-size: 17px; }
+    .prescription { color: var(--text-soft); font: 600 13px/1.4 var(--font-mono); }
+    .progression-note { margin-top: var(--space-1); color: var(--accent-hover); font-size: 12px; }
+    .set-table { display: grid; grid-template-columns: 52px repeat(3, minmax(64px, 92px)) 56px; gap: var(--space-2); align-items: center; }
+    .set-table .th { color: var(--text-soft); font-size: 12px; text-align: center; }
+    .set-number { text-align: center; font: 650 13px/1 var(--font-mono); }
+    .set-table input[type="number"] { min-height: 40px; padding: var(--space-2); text-align: center; }
+    .set-table input[type="checkbox"] { justify-self: center; }
+    .session-meta { display: grid; grid-template-columns: 180px 140px 1fr auto; gap: var(--space-4); align-items: end; padding: var(--space-6); border-bottom: 1px solid var(--border); }
+
+    .guide-intro { display: flex; align-items: start; justify-content: space-between; gap: var(--space-4); padding: var(--space-4) var(--space-6); border-bottom: 1px solid var(--border); background: var(--surface-soft); }
+    .guide-intro strong { display: block; margin-bottom: var(--space-1); }
+    .guide-intro p { color: var(--text-soft); font-size: 13px; }
+    .exercise-guide { margin-top: var(--space-4); border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-soft); overflow: hidden; }
+    .exercise-guide summary { min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-2) var(--space-4); color: var(--text); font-weight: 700; cursor: pointer; list-style: none; }
+    .exercise-guide summary::-webkit-details-marker { display: none; }
+    .exercise-guide summary:hover { background: color-mix(in oklch, var(--accent) 7%, var(--surface-soft)); }
+    .guide-summary-copy { display: flex; align-items: center; gap: var(--space-3); }
+    .guide-play { width: 32px; height: 32px; display: grid; place-items: center; border-radius: var(--radius); background: var(--accent-soft); color: var(--accent-hover); }
+    .guide-play svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .guide-meta { color: var(--text-soft); font-size: 12px; font-weight: 600; }
+    .guide-chevron { width: 20px; height: 20px; color: var(--text-soft); transition: transform 180ms ease-out; }
+    .exercise-guide[open] .guide-chevron { transform: rotate(180deg); }
+    .exercise-guide + .set-table { margin-top: var(--space-4); }
+    .guide-body { display: grid; grid-template-columns: minmax(240px, .78fr) minmax(0, 1.22fr); gap: var(--space-6); padding: var(--space-6); border-top: 1px solid var(--border); background: var(--surface); }
+    .guide-visual { display: grid; align-content: start; gap: var(--space-3); }
+    .guide-figure { min-height: 188px; display: grid; place-items: center; padding: var(--space-3); border-radius: var(--radius); background: var(--surface-soft); color: var(--text); }
+    .guide-figure svg { width: 100%; max-width: 360px; height: auto; overflow: visible; }
+    .figure-line { fill: none; stroke: currentColor; stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+    .figure-thin { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .figure-ghost { fill: none; stroke: var(--text-soft); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 5 6; opacity: .7; }
+    .figure-accent { fill: none; stroke: var(--accent); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+    .figure-equipment { fill: none; stroke: var(--border-strong); stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+    .figure-label { fill: var(--text-soft); font: 600 11px/1 var(--font-sans); }
+    .guide-targets { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+    .guide-targets span { min-height: 30px; display: inline-flex; align-items: center; padding: 0 var(--space-3); border-radius: var(--radius); background: var(--accent-soft); color: var(--accent-hover); font-size: 12px; font-weight: 700; }
+    .guide-copy { display: grid; gap: var(--space-4); }
+    .guide-block { padding-bottom: var(--space-4); border-bottom: 1px solid var(--border); }
+    .guide-block:last-child { padding-bottom: 0; border-bottom: 0; }
+    .guide-block h4 { margin: 0 0 var(--space-2); font-size: 14px; }
+    .guide-steps { margin: 0; padding-left: 1.25rem; color: var(--text-soft); font-size: 14px; }
+    .guide-steps li + li { margin-top: var(--space-2); }
+    .guide-cue { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); }
+    .guide-cue p { color: var(--text-soft); font-size: 13px; }
+    .guide-cue strong { display: block; margin-bottom: var(--space-1); color: var(--text); }
+    .guide-warning { padding: var(--space-3) var(--space-4); border-radius: var(--radius); background: color-mix(in oklch, var(--warning) 12%, var(--surface)); color: color-mix(in oklch, var(--text) 82%, var(--warning)); font-size: 13px; }
+
+    .status { display: inline-flex; align-items: center; gap: var(--space-2); min-height: 32px; padding: 0 var(--space-3); border-radius: var(--radius); font-size: 13px; font-weight: 700; }
+    .status::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+    .status.good { color: var(--positive); background: color-mix(in oklch, var(--positive) 12%, transparent); }
+    .status.warn { color: var(--warning); background: color-mix(in oklch, var(--warning) 12%, transparent); }
+    .status.bad { color: var(--negative); background: color-mix(in oklch, var(--negative) 12%, transparent); }
+    .status.info { color: var(--accent-hover); background: var(--accent-soft); }
+
+    .chart { min-height: 230px; display: grid; place-items: center; overflow: hidden; }
+    .chart svg { width: 100%; height: 230px; overflow: visible; }
+    .chart-grid { stroke: var(--border); stroke-width: 1; }
+    .chart-line { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+    .chart-dot { fill: var(--surface); stroke: var(--accent); stroke-width: 3; }
+    .chart-label { fill: var(--text-soft); font: 11px var(--font-mono); }
+    .chart-empty { color: var(--text-soft); text-align: center; padding: var(--space-8); }
+    .timeline { display: grid; grid-template-columns: repeat(12, 1fr); gap: var(--space-2); }
+    .week-node { min-height: 64px; display: grid; place-items: center; gap: var(--space-1); padding: var(--space-2); border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); text-align: center; }
+    .week-node.current { border-color: var(--accent); background: var(--accent-soft); }
+    .week-node.done { background: var(--surface-soft); color: var(--text-soft); }
+    .week-node strong { font: 700 14px/1 var(--font-mono); }
+    .week-node span { font-size: 11px; }
+    .data-table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+    th, td { padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; }
+    th { color: var(--text-soft); font-size: 12px; }
+    td { font-size: 14px; }
+    .empty { padding: var(--space-8); text-align: center; color: var(--text-soft); }
+    .empty strong { display: block; color: var(--text); margin-bottom: var(--space-2); }
+    .callout { padding: var(--space-6); border-radius: var(--radius); background: var(--surface-soft); }
+    .callout h3 { margin-bottom: var(--space-2); font-size: 18px; }
+    .callout p + p { margin-top: var(--space-3); }
+    .danger-zone { border-color: color-mix(in oklch, var(--negative) 45%, var(--border)); }
+    .source-list { display: grid; gap: var(--space-2); font-size: 14px; }
+
+    .bottom-nav { display: none; }
+    .toast-region { position: fixed; right: var(--space-6); bottom: var(--space-6); z-index: 100; display: grid; gap: var(--space-2); }
+    .toast { max-width: 360px; padding: var(--space-3) var(--space-4); border-radius: var(--radius); background: var(--ink-950); color: oklch(96% 0 0); transform: translateY(8px); opacity: 0; transition: transform 180ms ease-out, opacity 180ms ease-out; }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.error { background: var(--negative); }
+
+    @media (max-width: 900px) {
+      .desktop-nav { display: none; }
+      .dashboard-grid { grid-template-columns: 1fr; }
+      .metric-strip { grid-template-columns: repeat(2, 1fr); }
+      .metric:nth-child(2) { border-right: 0; }
+      .metric:nth-child(-n+2) { border-bottom: 1px solid var(--border); }
+      .timeline { grid-template-columns: repeat(6, 1fr); }
+      .session-meta { grid-template-columns: 1fr 1fr; }
+      .session-meta .button { grid-column: 1 / -1; }
+      .guide-body { grid-template-columns: 1fr; }
+      .bottom-nav { position: fixed; inset: auto 0 0; z-index: 50; display: grid; grid-template-columns: repeat(5, 1fr); padding: var(--space-2) max(var(--space-2), env(safe-area-inset-right)) max(var(--space-2), env(safe-area-inset-bottom)) max(var(--space-2), env(safe-area-inset-left)); background: color-mix(in oklch, var(--surface) 94%, transparent); border-top: 1px solid var(--border); backdrop-filter: blur(16px); }
+      .bottom-nav a { min-height: 48px; display: grid; place-items: center; border-radius: var(--radius); color: var(--text-soft); font-size: 12px; font-weight: 700; text-decoration: none; }
+      .bottom-nav a[aria-current="page"] { color: var(--accent-hover); background: var(--accent-soft); }
+    }
+
+    @media (max-width: 640px) {
+      .shell { width: min(100% - 24px, 1180px); }
+      .topbar-inner { height: 64px; }
+      .brand-copy span { display: none; }
+      main { padding-top: var(--space-6); }
+      .page-head { display: grid; align-items: start; margin-bottom: var(--space-6); }
+      .page-head h1 { font-size: 32px; }
+      .metric { padding: var(--space-4); }
+      .metric-value { font-size: 24px; }
+      .focus-block { grid-template-columns: 1fr; padding: var(--space-6); }
+      .focus-number { text-align: left; }
+      .form-grid, .form-grid.cols-4 { grid-template-columns: 1fr; }
+      .setup-banner { display: grid; }
+      .timeline { grid-template-columns: repeat(4, 1fr); }
+      .set-table { grid-template-columns: 36px repeat(3, minmax(52px, 1fr)) 40px; gap: var(--space-1); }
+      .set-table input[type="number"] { padding-inline: var(--space-1); }
+      .exercise { padding-inline: var(--space-3); }
+      .guide-intro { padding-inline: var(--space-4); }
+      .guide-intro .status { display: none; }
+      .guide-body { padding: var(--space-4); gap: var(--space-4); }
+      .guide-cue { grid-template-columns: 1fr; }
+      .guide-meta { display: none; }
+      .session-meta { grid-template-columns: 1fr; padding: var(--space-4); }
+      .session-meta .button { grid-column: auto; }
+      .panel-pad { padding: var(--space-4); }
+      .toast-region { left: var(--space-3); right: var(--space-3); bottom: 84px; }
+      .toast { max-width: none; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#app">跳到主要内容</a>
+  <header class="topbar">
+    <div class="shell topbar-inner">
+      <div class="brand" aria-label="稳进，12周减脂保肌">
+        <span class="brand-mark">12W</span>
+        <span class="brand-copy"><strong>稳进</strong><span>减脂保肌追踪器</span></span>
+      </div>
+      <nav class="desktop-nav" aria-label="主要导航">
+        <a class="nav-link" href="#today" data-route="today">今天</a>
+        <a class="nav-link" href="#training" data-route="training">训练</a>
+        <a class="nav-link" href="#nutrition" data-route="nutrition">饮食</a>
+        <a class="nav-link" href="#progress" data-route="progress">进度</a>
+        <a class="nav-link" href="#settings" data-route="settings">设置</a>
+      </nav>
+      <button class="icon-button" id="themeToggle" type="button" aria-label="切换深浅主题" title="切换主题">
+        <svg class="icon" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9c-1.4 1.1-3.2 1.8-5.2 1.8A7.8 7.8 0 0 1 8 6c0-1 .2-2 .6-2.8A9 9 0 0 0 12 3Z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main id="app" class="shell" tabindex="-1"></main>
+
+  <nav class="bottom-nav" aria-label="移动端导航">
+    <a href="#today" data-route="today">今天</a>
+    <a href="#training" data-route="training">训练</a>
+    <a href="#nutrition" data-route="nutrition">饮食</a>
+    <a href="#progress" data-route="progress">进度</a>
+    <a href="#settings" data-route="settings">设置</a>
+  </nav>
+  <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
+  <input type="file" id="importInput" accept="application/json" hidden>
+
+  <script>
+    'use strict';
+
+    const STORAGE_KEY = 'steadycut:v1';
+    const THEME_KEY = 'steadycut:theme';
+    const DAY_NAMES = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+    const ROUTES = new Set(['today', 'training', 'nutrition', 'progress', 'settings']);
+
+    const GUIDE_ALIASES = {
+      'lat-pulldown-a': 'lat-pulldown', 'lateral-a': 'lateral', 'lateral-b': 'lateral',
+      'curl-a': 'curl', 'curl-b': 'curl', 'pushdown-a': 'pushdown', 'pushdown-b': 'pushdown',
+      'legcurl-a': 'legcurl', 'legcurl-b': 'legcurl', 'calf-a': 'calf', 'calf-b': 'calf'
+    };
+
+    const EXERCISE_GUIDES = {
+      bench: {
+        figure: 'horizontalPress', targets: ['胸大肌', '肱三头肌', '前三角'],
+        setup: '眼睛位于杠铃正下方附近，肩胛骨向后下方收紧，双脚踩实地面，手腕保持在前臂正上方。',
+        steps: ['安全取杠后让杠铃停在肩关节上方，先稳定再下放。', '吸气并控制杠铃落向胸骨中下段，肘部约在躯干两侧45°–70°。', '双脚持续发力，把杠铃向上并略向头侧推回起点，最后呼气。'],
+        cue: '肩胛固定、前臂接近垂直、臀部留在凳面。', breathe: '下放吸气并稳住躯干，上推通过难点后呼气。',
+        mistake: '手腕过度后折、肘部完全横向张开、杠铃砸胸或臀部离凳。', alternative: '肩前侧疼痛时先减重和缩小下放幅度；仍痛可换中立握哑铃卧推或器械胸推。'
+      },
+      'chest-row': {
+        figure: 'horizontalPull', targets: ['背阔肌', '菱形肌', '后束'],
+        setup: '胸口稳定贴住靠垫，双脚踩稳，脊柱保持自然，不要为了够把手而耸肩。',
+        steps: ['先把肩膀远离耳朵，手臂自然伸直。', '呼气，把肘部向后并略向髋部拉，胸口始终贴垫。', '肩胛收拢处停顿一下，再吸气控制手臂伸直。'],
+        cue: '想象用肘部拉，不是用手腕拽。', breathe: '拉回时呼气，控制还原时吸气。',
+        mistake: '耸肩、胸口离垫借力、重量过大导致只有半程。', alternative: '肩后侧不适时使用中立握，并把肘部贴近身体；也可换坐姿划船。'
+      },
+      'incline-db': {
+        figure: 'inclinePress', targets: ['上胸', '肱三头肌', '前三角'],
+        setup: '凳背约调到20°–35°，肩胛后缩下沉，哑铃位于上胸两侧，前臂接近垂直。',
+        steps: ['双脚踩稳，先把哑铃稳定在肩部外侧。', '呼气向上推，轨迹略向内，但不要在顶部撞击哑铃。', '吸气缓慢下放到上臂略低于躯干或舒适深度。'],
+        cue: '低角度上斜更偏上胸；全程不要耸肩。', breathe: '下放吸气，上推呼气。',
+        mistake: '凳背过高变成推肩、手肘外展90°、哑铃下落过快。', alternative: '肩前侧不适时用中立握，或换低角度器械胸推。'
+      },
+      'lat-pulldown': {
+        figure: 'verticalPull', targets: ['背阔肌', '肱二头肌', '下斜方肌'],
+        setup: '大腿垫压稳，握距略宽于肩，胸口抬起但不要过度后仰。',
+        steps: ['先让肩膀向下远离耳朵，再开始弯肘。', '呼气，把横杆拉向锁骨至上胸位置，肘部向下靠近身体。', '吸气控制横杆上升，手臂伸直并让背阔肌充分拉长。'],
+        cue: '胸口找横杆，肘部找裤兜。', breathe: '下拉呼气，还原吸气。',
+        mistake: '拉到颈后、身体大幅后摆、用手臂猛拽而肩膀耸起。', alternative: '肩部不舒服时用中立窄握或单臂绳索下拉。'
+      },
+      lateral: {
+        figure: 'lateralRaise', targets: ['三角肌中束', '冈上肌'],
+        setup: '站稳，肘部微屈，手臂位于身体正侧面稍微向前约20°，肩膀放松。',
+        steps: ['先稳定躯干，哑铃从大腿外侧开始。', '呼气，以肘部带动手臂向外抬到接近肩高。', '吸气控制下放，不让哑铃直接撞回身体。'],
+        cue: '肘部领路，手腕与肘部大致同高。', breathe: '抬起呼气，下放吸气。',
+        mistake: '耸肩、甩动身体、手臂抬得过高或把拇指强行向下扣。', alternative: '肩部夹痛时降低高度、减轻重量，或换单臂绳索侧平举。'
+      },
+      curl: {
+        figure: 'curl', targets: ['肱二头肌', '肱肌', '肱桡肌'],
+        setup: '站稳，肋骨保持下沉，上臂自然贴近躯干，手腕保持中立。',
+        steps: ['从肘部接近伸直的位置开始，先固定肩和躯干。', '呼气弯曲肘部，把重量抬向肩部，不让肘部明显前移。', '吸气用2秒左右控制下放到接近完全伸直。'],
+        cue: '只转动肘关节，躯干像一堵墙。', breathe: '弯举呼气，下放吸气。',
+        mistake: '后仰甩起、手腕折弯、下放过快或肘部不断向前跑。', alternative: '手腕或肘部不适时改锤式弯举或绳索弯举并减重。'
+      },
+      pushdown: {
+        figure: 'pushdown', targets: ['肱三头肌'],
+        setup: '面对滑轮站稳，肘部贴近身体并略在躯干前侧，肩膀放松。',
+        steps: ['前臂从接近水平位置开始，上臂保持不动。', '呼气向下伸直肘部，绳索版本可在底部轻微向两侧分开。', '吸气控制回到肘部约90°，不要让配重片相撞。'],
+        cue: '钉住肘部，只让前臂摆动。', breathe: '下压呼气，还原吸气。',
+        mistake: '身体压绳借力、肘部前后漂移、肩膀内旋并耸起。', alternative: '肘部不适时减小重量、改用绳索或单臂反握下压。'
+      },
+      'squat-legpress': {
+        figure: 'squat', targets: ['股四头肌', '臀大肌', '内收肌'],
+        setup: '深蹲：双脚约肩宽、脚尖略外；腿举：腰背贴垫、双脚放在踏板中部。两种动作二选一。',
+        steps: ['吸气收紧躯干，让膝盖沿脚尖方向移动。', '深蹲时髋膝同步下沉；腿举时控制踏板下降到腰背仍贴垫的深度。', '脚掌均匀发力站起或推起，通过难点后呼气，但不要锁死膝盖。'],
+        cue: '整只脚掌压地，膝盖跟随第二脚趾方向。', breathe: '下降吸气并收紧，向上通过难点后呼气。',
+        mistake: '膝盖向内塌、脚跟抬起、腰背卷曲，或腿举时把膝盖锁死。', alternative: '腰背或膝部不适时减小幅度和重量，优先选择疼痛更少的腿举或箱式深蹲。'
+      },
+      rdl: {
+        figure: 'hinge', targets: ['腘绳肌', '臀大肌', '竖脊肌'],
+        setup: '双脚约髋宽，膝盖微屈，杠铃或哑铃贴近大腿，肩胛保持稳定。',
+        steps: ['吸气收紧腹部，把髋部向后推，重量沿腿部向下。', '保持脊柱自然，下降到腘绳肌明显拉伸且腰背仍稳定的位置。', '脚掌压地、臀部向前，站直后呼气，不要在顶部过度后仰。'],
+        cue: '关车门一样向后推髋，重量始终贴腿。', breathe: '下放前吸气收紧，站起通过难点后呼气。',
+        mistake: '把动作做成深蹲、背部弯曲、重量离腿太远或顶部腰椎后仰。', alternative: '腰部不适时先用轻哑铃练髋铰链，或换器械臀推和腿弯举。'
+      },
+      bulgarian: {
+        figure: 'splitSquat', targets: ['股四头肌', '臀大肌', '内收肌'],
+        setup: '前脚踩稳，后脚脚背轻放凳面；先用自重找到不会失去平衡的站距。',
+        steps: ['吸气，身体略向前但脊柱保持自然，垂直向下。', '前膝跟随脚尖方向，下降到前脚仍能全掌受力的位置。', '前脚中部和脚跟发力站起，通过难点后呼气。'],
+        cue: '重量留在前腿，后腿只负责平衡。', breathe: '下降吸气，站起呼气。',
+        mistake: '站距过窄导致前膝挤压、身体左右晃、后脚用力蹬凳。', alternative: '平衡困难时扶固定物；膝部不适时缩小幅度或换反向箭步蹲。'
+      },
+      legcurl: {
+        figure: 'legCurl', targets: ['腘绳肌', '腓肠肌'],
+        setup: '调整器械转轴对准膝关节，滚垫位于脚踝上方，髋部贴紧坐垫或卧垫。',
+        steps: ['先收紧腹部并稳定髋部。', '呼气弯曲膝盖，把脚跟拉向臀部或座椅下方。', '顶端停顿后吸气慢慢伸膝，不让配重片相撞。'],
+        cue: '膝盖对准转轴，髋部不要抬起。', breathe: '屈膝呼气，伸膝吸气。',
+        mistake: '髋部离垫、用惯性甩动、膝关节没有对准机器转轴。', alternative: '膝后侧不适时减小幅度，或换轻重量瑞士球腿弯举。'
+      },
+      calf: {
+        figure: 'calfRaise', targets: ['腓肠肌', '比目鱼肌'],
+        setup: '前脚掌稳定踩在踏板，膝盖自然伸直或微屈，身体保持竖直。',
+        steps: ['吸气，让脚跟缓慢下降到小腿有拉伸的位置。', '前脚掌压住踏板，呼气把脚跟尽量抬高。', '顶端停顿一秒，再控制下降，避免弹跳。'],
+        cue: '大脚趾根、小脚趾根同时压稳。', breathe: '抬起呼气，下降吸气。',
+        mistake: '快速弹跳、脚踝向内外翻、动作幅度太小。', alternative: '跟腱或足底疼痛时停止负重提踵，先改为无痛范围活动并评估原因。'
+      },
+      plank: {
+        figure: 'plank', targets: ['腹横肌', '腹直肌', '臀肌'],
+        setup: '肘部位于肩膀正下方，前臂贴地，双脚约髋宽。',
+        steps: ['收紧臀部并轻轻把骨盆向后卷，让肋骨下沉。', '头、肩、髋、踝保持近似直线，正常呼吸。', '姿势开始塌陷前结束该组，不必硬撑到腰酸。'],
+        cue: '像要承受一拳一样收紧腹部。', breathe: '不要憋气，保持短而稳定的呼吸。',
+        mistake: '腰部下塌、臀部抬得过高、耸肩或憋气。', alternative: '腰部不适时改为膝盖着地平板支撑或死虫式。'
+      },
+      'db-press': {
+        figure: 'overheadPress', targets: ['三角肌', '肱三头肌', '上胸'],
+        setup: '坐姿靠背接近直立，双脚踩稳；哑铃位于耳朵两侧，手腕叠在肘部上方。',
+        steps: ['吸气收紧腹部，保持肋骨不过度上翻。', '呼气把哑铃向上推到头顶，手臂接近伸直但不猛锁肘。', '吸气控制哑铃回到耳朵至肩部高度。'],
+        cue: '头顶向上推，腰背保持贴垫。', breathe: '下放吸气，上推呼气。',
+        mistake: '腰部大幅反弓、耸肩、哑铃下降过低或左右轨迹不一致。', alternative: '肩部不适时使用中立握、降低靠背角度，或换地雷管推举。'
+      },
+      'pullup-pulldown': {
+        figure: 'verticalPull', targets: ['背阔肌', '肱二头肌', '下斜方肌'],
+        setup: '引体向上和高位下拉二选一。先采用能完成目标次数且动作稳定的版本。',
+        steps: ['从手臂伸直、肩膀稳定的位置开始。', '先把肩膀向下，再用肘部向下拉；引体时让上胸接近横杆。', '控制回到手臂伸直，不自由落下或耸肩悬挂。'],
+        cue: '肘部向肋骨两侧下拉。', breathe: '向上或下拉时呼气，还原时吸气。',
+        mistake: '摆腿借力、含胸耸肩、只做很短幅度，或高位下拉到颈后。', alternative: '做不了规范引体时使用辅助引体或高位下拉，不必硬凑次数。'
+      },
+      'machine-press': {
+        figure: 'horizontalPress', targets: ['胸大肌', '肱三头肌', '前三角'],
+        setup: '调整座椅，使把手与胸骨中段大致同高；肩胛贴住靠垫，双脚踩稳。',
+        steps: ['握住把手，手腕保持中立，先把肩膀远离耳朵。', '呼气向前推到手臂接近伸直，但不要猛锁肘。', '吸气控制回程，到胸肌有拉伸而肩前侧无夹痛的位置。'],
+        cue: '胸口保持抬起，肩胛留在靠垫上。', breathe: '回程吸气，推起呼气。',
+        mistake: '座椅高度错误、肩膀向前滚、配重片猛烈相撞。', alternative: '肩部不适时调整座椅、缩小回程或选择中立握把手。'
+      },
+      'seated-row': {
+        figure: 'horizontalPull', targets: ['背阔肌', '菱形肌', '后束'],
+        setup: '坐稳并让脊柱保持自然，胸口抬起，手臂伸直时不要让腰背明显圆起。',
+        steps: ['先下沉肩膀，再开始弯肘。', '呼气把把手拉向下胸或上腹，肘部沿身体两侧向后。', '停顿后吸气伸直手臂，躯干保持稳定。'],
+        cue: '胸口不追着把手跑，肘部向后划。', breathe: '拉回呼气，伸直吸气。',
+        mistake: '身体大幅前后摆动、耸肩、手腕过度弯曲。', alternative: '腰部容易疲劳时换胸托划船；肩部不适时使用中立握。'
+      },
+      'rear-delt': {
+        figure: 'rearFly', targets: ['三角肌后束', '菱形肌', '中斜方肌'],
+        setup: '胸口贴住反向飞鸟器械靠垫，手臂与肩大致同高，肘部微屈。',
+        steps: ['先保持肩膀下沉，躯干贴垫。', '呼气把双臂向两侧打开，肘部沿弧线向后。', '肩后侧收紧后，吸气控制回到起点。'],
+        cue: '打开手臂，不要耸肩夹脖子。', breathe: '打开呼气，回程吸气。',
+        mistake: '重量太大导致耸肩、肘部弯曲变化很大、身体离垫。', alternative: '肩部不适时降低手臂高度，或换轻重量绳索反向飞鸟。'
+      },
+      'hip-thrust': {
+        figure: 'hipThrust', targets: ['臀大肌', '腘绳肌'],
+        setup: '上背靠在稳固长凳边缘，杠铃垫位于髋部，双脚约肩宽。',
+        steps: ['下巴微收、肋骨下沉，脚掌踩稳。', '呼气用臀部把髋推起，顶端小腿接近垂直。', '顶端收紧臀部但不后仰腰椎，再吸气控制下降。'],
+        cue: '用臀部抬髋，不是用腰向后折。', breathe: '抬起呼气，下降吸气。',
+        mistake: '脚离臀部过远或过近、顶部腰椎过伸、杠铃压在腹部。', alternative: '腰部不适时先做自重臀桥；髋部受压时增加厚护垫。'
+      },
+      'hack-legpress': {
+        figure: 'squat', targets: ['股四头肌', '臀大肌', '内收肌'],
+        setup: '哈克深蹲或腿举二选一。背部贴紧靠垫，双脚放在踏板上并让膝盖跟随脚尖。',
+        steps: ['解锁器械后吸气收紧躯干，控制屈膝下降。', '下降到腰背仍贴垫、脚跟不抬且膝盖无疼痛的位置。', '整只脚掌发力推起，通过难点后呼气，顶部不要猛锁膝。'],
+        cue: '背部贴垫，膝盖沿脚尖方向移动。', breathe: '下降吸气，推起呼气。',
+        mistake: '腰背离垫、膝盖内扣、脚掌位置太低导致脚跟抬起。', alternative: '膝部不适时提高脚位、缩小深度和重量；仍痛应停止并评估。'
+      },
+      'reverse-lunge': {
+        figure: 'splitSquat', targets: ['臀大肌', '股四头肌', '内收肌'],
+        setup: '双脚髋宽站立，先用自重练习；后退距离要让前脚全程稳固。',
+        steps: ['一只脚向后迈，前脚保持全掌着地。', '吸气垂直下降，前膝跟随脚尖，后膝接近地面。', '前脚发力站回起点，通过难点后呼气，再换边。'],
+        cue: '前腿负责发力，后腿负责支撑。', breathe: '下降吸气，返回呼气。',
+        mistake: '步幅太窄、前脚跟抬起、身体左右摇晃或后脚猛蹬。', alternative: '平衡困难时扶固定物；膝部不适时减小深度或换分腿蹲。'
+      },
+      'leg-extension': {
+        figure: 'legExtension', targets: ['股四头肌'],
+        setup: '机器转轴对准膝关节，滚垫位于小腿下端，臀部和背部贴紧靠垫。',
+        steps: ['抓稳把手并保持大腿不离开座椅。', '呼气伸膝，把小腿抬到接近水平或舒适终点。', '顶端停顿后吸气缓慢下放，不让配重片撞击。'],
+        cue: '只转动膝关节，控制比重量重要。', breathe: '伸膝呼气，下放吸气。',
+        mistake: '用惯性踢起、臀部离座、机器转轴与膝盖错位。', alternative: '膝前侧疼痛时减轻重量和缩小终末幅度，或换疼痛更少的腿举。'
+      },
+      crunch: {
+        figure: 'crunch', targets: ['腹直肌', '腹斜肌'],
+        setup: '仰卧，膝盖弯曲、双脚踩地；手放胸前或轻触头侧，不要拉颈部。',
+        steps: ['呼气并让肋骨向骨盆靠近，肩胛骨离开地面。', '顶端短暂停顿，腰部仍自然贴近地面。', '吸气缓慢躺回，不靠惯性反弹。'],
+        cue: '卷起胸廓，不是把头向前拽。', breathe: '卷起时充分呼气，回落时吸气。',
+        mistake: '双手拉头、动作幅度过大变成坐起、快速弹起。', alternative: '颈部不适时双手交叉胸前并减小幅度，或改死虫式。'
+      }
+    };
+
+    const PROGRAM = {
+      upperA: {
+        short: '上肢A', weekday: 1, title: '上肢A · 卧推主项',
+        exercises: [
+          { id: 'bench', name: '卧推', sets: 3, min: 5, max: 8, increment: 2.5, start: 55 },
+          { id: 'chest-row', name: '胸托划船', sets: 3, min: 6, max: 10, increment: 2.5 },
+          { id: 'incline-db', name: '上斜哑铃卧推', sets: 2, min: 8, max: 12, increment: 2 },
+          { id: 'lat-pulldown-a', name: '高位下拉', sets: 3, min: 8, max: 12, increment: 2.5 },
+          { id: 'lateral-a', name: '侧平举', sets: 3, min: 12, max: 20, increment: 1 },
+          { id: 'curl-a', name: '二头弯举', sets: 2, min: 10, max: 15, increment: 1 },
+          { id: 'pushdown-a', name: '绳索下压', sets: 2, min: 10, max: 15, increment: 2.5 }
+        ]
+      },
+      lowerA: {
+        short: '下肢A', weekday: 2, title: '下肢A · 蹲与髋铰链',
+        exercises: [
+          { id: 'squat-legpress', name: '深蹲或腿举', sets: 3, min: 6, max: 10, increment: 5 },
+          { id: 'rdl', name: '罗马尼亚硬拉', sets: 3, min: 6, max: 10, increment: 5 },
+          { id: 'bulgarian', name: '保加利亚分腿蹲', sets: 2, min: 8, max: 12, increment: 2.5 },
+          { id: 'legcurl-a', name: '腿弯举', sets: 2, min: 10, max: 15, increment: 2.5 },
+          { id: 'calf-a', name: '提踵', sets: 3, min: 10, max: 15, increment: 2.5 },
+          { id: 'plank', name: '平板支撑（秒）', sets: 2, min: 30, max: 60, increment: 0 }
+        ]
+      },
+      upperB: {
+        short: '上肢B', weekday: 4, title: '上肢B · 推肩主项',
+        exercises: [
+          { id: 'db-press', name: '哑铃推肩（单只）', sets: 3, min: 6, max: 10, increment: 2, start: 14 },
+          { id: 'pullup-pulldown', name: '引体向上或高位下拉', sets: 3, min: 6, max: 10, increment: 2.5 },
+          { id: 'machine-press', name: '器械胸推', sets: 3, min: 8, max: 12, increment: 2.5 },
+          { id: 'seated-row', name: '坐姿划船', sets: 3, min: 8, max: 12, increment: 2.5 },
+          { id: 'lateral-b', name: '侧平举', sets: 2, min: 12, max: 20, increment: 1 },
+          { id: 'rear-delt', name: '反向飞鸟', sets: 2, min: 12, max: 20, increment: 1 },
+          { id: 'curl-b', name: '二头弯举', sets: 2, min: 10, max: 15, increment: 1 },
+          { id: 'pushdown-b', name: '三头下压', sets: 2, min: 10, max: 15, increment: 2.5 }
+        ]
+      },
+      lowerB: {
+        short: '下肢B', weekday: 6, title: '下肢B · 臀腿主项',
+        exercises: [
+          { id: 'hip-thrust', name: '臀推', sets: 3, min: 6, max: 10, increment: 5 },
+          { id: 'hack-legpress', name: '哈克深蹲或腿举', sets: 3, min: 8, max: 12, increment: 5 },
+          { id: 'reverse-lunge', name: '反向箭步蹲', sets: 2, min: 8, max: 12, increment: 2.5 },
+          { id: 'legcurl-b', name: '腿弯举', sets: 3, min: 10, max: 15, increment: 2.5 },
+          { id: 'leg-extension', name: '腿屈伸', sets: 2, min: 12, max: 15, increment: 2.5 },
+          { id: 'calf-b', name: '提踵', sets: 2, min: 10, max: 15, increment: 2.5 },
+          { id: 'crunch', name: '卷腹', sets: 2, min: 12, max: 20, increment: 0 }
+        ]
+      }
+    };
+
+    const pad = value => String(value).padStart(2, '0');
+    const localISO = (date = new Date()) => `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+    const parseLocal = value => { const [y, m, d] = value.split('-').map(Number); return new Date(y, m - 1, d); };
+    const plusDays = (value, days) => { const date = parseLocal(value); date.setDate(date.getDate() + days); return localISO(date); };
+    const nextMonday = () => { const date = new Date(); const shift = (8 - date.getDay()) % 7 || 7; date.setDate(date.getDate() + shift); return localISO(date); };
+    const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+    const number = value => Number.isFinite(Number(value)) ? Number(value) : 0;
+    const round = (value, digits = 1) => Number(value).toFixed(digits).replace(/\.0$/, '');
+    const fmtDate = value => parseLocal(value).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+    const escapeHTML = value => String(value ?? '').replace(/[&<>'"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[char]);
+
+    function defaultState() {
+      return {
+        version: 1,
+        profile: {
+          name: '', sex: '男', age: 20, height: 174, startDate: nextMonday(),
+          startWeight: null, startWaist: null,
+          calorieTarget: 2150, proteinTarget: 150, fatTarget: 60, carbTarget: 250,
+          stepOverride: null, runOverride: null, lowImpactMode: false
+        },
+        daily: {}, workouts: {}, measurements: [], selectedTrainingDay: 'upperA'
+      };
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return defaultState();
+        const saved = JSON.parse(raw);
+        const base = defaultState();
+        return {
+          ...base, ...saved,
+          profile: { ...base.profile, ...(saved.profile || {}) },
+          daily: saved.daily || {}, workouts: saved.workouts || {}, measurements: Array.isArray(saved.measurements) ? saved.measurements : []
+        };
+      } catch (error) {
+        console.error('读取本地数据失败', error);
+        return defaultState();
+      }
+    }
+
+    let state = loadState();
+
+    function saveState(message) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        if (message) toast(message);
+      } catch (error) {
+        console.error('保存失败', error);
+        toast('保存失败，请先导出备份或清理浏览器空间', true);
+      }
+    }
+
+    function toast(message, isError = false) {
+      const region = document.getElementById('toastRegion');
+      const el = document.createElement('div');
+      el.className = `toast${isError ? ' error' : ''}`;
+      el.setAttribute('role', 'status');
+      el.textContent = message;
+      region.appendChild(el);
+      requestAnimationFrame(() => el.classList.add('show'));
+      setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 200); }, 2600);
+    }
+
+    function route() {
+      const value = location.hash.replace('#', '').split('?')[0];
+      return ROUTES.has(value) ? value : 'today';
+    }
+
+    function weekFor(dateValue = localISO()) {
+      const diff = Math.floor((parseLocal(dateValue) - parseLocal(state.profile.startDate)) / 86400000);
+      if (diff < 0) return 0;
+      return clamp(Math.floor(diff / 7) + 1, 1, 12);
+    }
+
+    function activityTargets(week = weekFor()) {
+      const baseSteps = week <= 1 ? 6500 : week === 2 ? 7500 : 8000;
+      const baseRun = week <= 1 ? 20 : week === 2 ? 25 : 30;
+      return {
+        steps: state.profile.stepOverride || baseSteps,
+        run: state.profile.runOverride ?? baseRun,
+        runs: 2,
+        mode: state.profile.lowImpactMode ? '坡走、椭圆机或自行车' : '轻松跑'
+      };
+    }
+
+    function workoutForWeekday(dateValue = localISO()) {
+      const weekday = parseLocal(dateValue).getDay();
+      return Object.entries(PROGRAM).find(([, plan]) => plan.weekday === weekday)?.[0] || null;
+    }
+
+    function dayLog(dateValue = localISO()) {
+      return { calories: 0, protein: 0, fat: 0, carbs: 0, steps: 0, water: 0, vegetables: 0, fruit: 0, runMinutes: 0, friedChicken: false, notes: '', ...(state.daily[dateValue] || {}) };
+    }
+
+    function progressPercent(value, target) { return target > 0 ? clamp((number(value) / target) * 100, 0, 120) : 0; }
+
+    function metric(label, value, target, unit, inverse = false) {
+      const pct = progressPercent(value, target);
+      const over = inverse && number(value) > target + 100;
+      const digits = unit === 'L' ? 1 : 0;
+      return `<div class="metric"><div class="metric-label">${label}</div><div class="metric-value">${round(value, digits)}<span class="metric-target"> ${unit}</span></div><div class="metric-target">目标 ${target} ${unit}</div><div class="progress" aria-label="${label}完成${round(pct, 0)}%"><span class="${over ? 'over' : ''}" style="width:${Math.min(pct, 100)}%"></span></div></div>`;
+    }
+
+    function setupBanner() {
+      const hasBaseline = number(state.profile.startWeight) > 0 && number(state.profile.startWaist) > 0;
+      if (hasBaseline) return '';
+      return `<section class="setup-banner" aria-label="开始前设置"><div><strong>先录入基线，算法才会开始工作</strong><p>在健身房称体重，晨起测肚脐水平腰围；正、侧、背照片保存在你自己的相册。</p></div><a class="button small-button" href="#settings">录入基线</a></section>`;
+    }
+
+    function pageHead(eyebrow, title, text) {
+      return `<header class="page-head"><div><div class="eyebrow">${eyebrow}</div><h1>${title}</h1></div><p>${text}</p></header>`;
+    }
+
+    function renderToday() {
+      const today = localISO();
+      const log = dayLog(today);
+      const week = weekFor(today);
+      const activity = activityTargets(week || 1);
+      const workoutId = workoutForWeekday(today);
+      const plan = workoutId ? PROGRAM[workoutId] : null;
+      const preStart = week === 0;
+      const focusTitle = preStart ? '准备好基线，下周一正式开始' : (plan ? plan.title : '恢复日 · 把步数走够');
+      const focusText = preStart ? '今天完成称重、腰围和饮食记录，不需要提前补做训练。' : (plan ? '正式组保留约2次余力；第一周保留3次余力。训练质量优先于堆更多动作。' : `安排${activity.mode}和步行，保证睡眠，不用因为休息而少吃一整餐。`);
+      const focusValue = preStart ? 'PREP' : (plan ? `${plan.exercises.reduce((sum, ex) => sum + effectiveSets(ex.sets, week), 0)}` : `${activity.steps}`);
+      const focusUnit = preStart ? '准备期' : (plan ? '正式组' : '步目标');
+      return `${pageHead(week ? `第 ${week} 周 · ${DAY_NAMES[new Date().getDay()]}` : '准备阶段', '今天只做该做的', new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' }))}
+        ${setupBanner()}
+        <section class="metric-strip" aria-label="今日完成情况">
+          ${metric('热量', log.calories, state.profile.calorieTarget, 'kcal', true)}
+          ${metric('蛋白质', log.protein, state.profile.proteinTarget, 'g')}
+          ${metric('步数', log.steps, activity.steps, '步')}
+          ${metric('饮水', log.water, 2.5, 'L')}
+        </section>
+        <div class="dashboard-grid">
+          <div class="stack-lg">
+            <section class="focus-block">
+              <div><h2>${focusTitle}</h2><p>${focusText}</p><div class="focus-meta"><span class="chip">${preStart ? '记录基线' : (plan ? '45–60 分钟' : `${activity.mode} ${activity.run} 分钟`)}</span>${plan && ['upperA', 'upperB'].includes(workoutId) ? `<span class="chip">训练后${activity.mode} ${activity.run} 分钟</span>` : ''}<span class="chip">睡眠 8 小时</span></div></div>
+              <div class="focus-number"><strong>${focusValue}</strong><span>${focusUnit}</span></div>
+            </section>
+            <section class="panel panel-pad">
+              <div class="panel-title"><h2>${plan ? '本次训练' : '今日活动'}</h2>${plan ? `<button class="button small-button" data-go-training="${workoutId}">打开记录</button>` : ''}</div>
+              ${plan ? `<div class="rule-list">${plan.exercises.map((ex, index) => `<div class="rule"><span class="rule-index">${index + 1}</span><div><strong>${ex.name}</strong><div class="small muted">${effectiveSets(ex.sets, week)} × ${ex.min}–${ex.max} · 保留 ${week === 1 ? 3 : 2} 次余力</div></div></div>`).join('')}</div>` : `<div class="callout"><h3>低疲劳减脂</h3><p>用饭后步行补足到 ${activity.steps} 步；本周完成 ${activity.runs} 次、每次 ${activity.run} 分钟${activity.mode}。保持可以说完整句子的强度。</p></div>`}
+            </section>
+          </div>
+          <aside class="panel panel-pad">
+            <div class="panel-title"><h2>快速记录</h2><span class="small muted">自动保存在本机</span></div>
+            <form id="quickLog" class="stack">
+              <div class="form-grid">
+                <div class="field"><label for="qCalories">热量 kcal</label><input id="qCalories" name="calories" type="number" min="0" max="6000" value="${number(log.calories) || ''}" inputmode="decimal"></div>
+                <div class="field"><label for="qProtein">蛋白质 g</label><input id="qProtein" name="protein" type="number" min="0" max="400" value="${number(log.protein) || ''}" inputmode="decimal"></div>
+                <div class="field"><label for="qSteps">步数</label><input id="qSteps" name="steps" type="number" min="0" max="60000" value="${number(log.steps) || ''}" inputmode="numeric"></div>
+                <div class="field"><label for="qWater">饮水 L</label><input id="qWater" name="water" type="number" min="0" max="10" step="0.1" value="${number(log.water) || ''}" inputmode="decimal"></div>
+              </div>
+              <button class="button" type="submit">保存今天</button>
+              <a class="button ghost" href="#nutrition">填写完整饮食记录</a>
+            </form>
+          </aside>
+        </div>`;
+    }
+
+    function effectiveSets(sets, week) { return [6, 12].includes(week) ? Math.max(1, Math.ceil(sets / 2)) : sets; }
+
+    function guideFigure(kind, label) {
+      const scenes = {
+        horizontalPress: `
+          <path class="figure-equipment" d="M18 111H137M183 111H302"/><path class="figure-equipment" d="M44 111V128M117 111V128M209 111V128M282 111V128"/>
+          <circle class="figure-line" cx="38" cy="87" r="9"/><path class="figure-line" d="M48 88H102L122 110M102 88L128 111"/><path class="figure-accent" d="M78 88L77 63L103 56M66 56H116"/>
+          <circle class="figure-line" cx="203" cy="87" r="9"/><path class="figure-line" d="M213 88H267L287 110M267 88L293 111"/><path class="figure-accent" d="M243 88L243 32M218 28H268"/><path class="figure-thin" d="M118 67V40M113 45L118 40L123 45"/>`,
+        inclinePress: `
+          <path class="figure-equipment" d="M24 112L109 72M109 72L137 112M189 112L274 72M274 72L302 112"/>
+          <circle class="figure-line" cx="48" cy="90" r="9"/><path class="figure-line" d="M57 87L101 68M63 86L41 112M91 74L125 111"/><path class="figure-accent" d="M79 78L76 54L100 47M66 47H110"/>
+          <circle class="figure-line" cx="213" cy="90" r="9"/><path class="figure-line" d="M222 87L266 68M228 86L206 112M256 74L290 111"/><path class="figure-accent" d="M244 78L244 30M219 26H269"/><path class="figure-thin" d="M120 66V40M115 45L120 40L125 45"/>`,
+        horizontalPull: `
+          <path class="figure-equipment" d="M24 116H91M189 116H256M135 34V116M300 34V116"/>
+          <circle class="figure-line" cx="61" cy="43" r="9"/><path class="figure-line" d="M62 53V93L43 116M62 93L91 116"/><path class="figure-accent" d="M64 59L119 59M119 52V66"/>
+          <circle class="figure-line" cx="226" cy="43" r="9"/><path class="figure-line" d="M227 53V93L208 116M227 93L256 116"/><path class="figure-accent" d="M229 59L264 59M229 59L209 72M264 52V66"/><path class="figure-thin" d="M118 83H92M97 78L92 83L97 88"/>`,
+        verticalPull: `
+          <path class="figure-equipment" d="M27 24H133M192 24H298"/>
+          <circle class="figure-line" cx="80" cy="52" r="9"/><path class="figure-line" d="M80 61V104M80 104L57 128M80 104L103 128"/><path class="figure-accent" d="M78 65L43 25M82 65L117 25"/>
+          <circle class="figure-line" cx="245" cy="52" r="9"/><path class="figure-line" d="M245 61V104M245 104L222 128M245 104L268 128"/><path class="figure-accent" d="M243 66L214 54L205 31M247 66L276 54L285 31"/><path class="figure-thin" d="M144 43V70M139 65L144 70L149 65"/>`,
+        lateralRaise: `
+          <circle class="figure-line" cx="80" cy="34" r="9"/><path class="figure-line" d="M80 43V91M80 91L58 128M80 91L102 128"/><path class="figure-accent" d="M78 52L58 86M82 52L102 86"/>
+          <circle class="figure-line" cx="245" cy="34" r="9"/><path class="figure-line" d="M245 43V91M245 91L223 128M245 91L267 128"/><path class="figure-accent" d="M243 53L195 58M247 53L295 58"/><path class="figure-thin" d="M112 83L135 62M128 63H135V70"/>`,
+        curl: `
+          <circle class="figure-line" cx="72" cy="32" r="9"/><path class="figure-line" d="M72 41V89M72 89L50 128M72 89L94 128"/><path class="figure-accent" d="M70 53L69 96M74 53L92 96"/>
+          <circle class="figure-line" cx="237" cy="32" r="9"/><path class="figure-line" d="M237 41V89M237 89L215 128M237 89L259 128"/><path class="figure-accent" d="M235 53L217 68L232 48M239 53L257 68L242 48"/><path class="figure-thin" d="M113 83L130 60M123 62H130V69"/>`,
+        pushdown: `
+          <path class="figure-equipment" d="M22 20H129M187 20H294M118 20V61M283 20V61"/>
+          <circle class="figure-line" cx="67" cy="36" r="9"/><path class="figure-line" d="M67 45V91M67 91L47 128M67 91L91 128"/><path class="figure-accent" d="M69 56L91 67L111 55"/>
+          <circle class="figure-line" cx="232" cy="36" r="9"/><path class="figure-line" d="M232 45V91M232 91L212 128M232 91L256 128"/><path class="figure-accent" d="M234 56L242 85M234 56L260 85"/><path class="figure-thin" d="M141 55V82M136 77L141 82L146 77"/>`,
+        squat: `
+          <path class="figure-thin" d="M18 129H142M183 129H307"/>
+          <circle class="figure-line" cx="80" cy="27" r="9"/><path class="figure-line" d="M80 36V82M80 82L61 127M80 82L102 127"/><path class="figure-accent" d="M58 53H103"/>
+          <circle class="figure-line" cx="244" cy="55" r="9"/><path class="figure-line" d="M241 64L224 92M224 92L193 107L207 128M224 92L268 104L285 128"/><path class="figure-accent" d="M207 74H266"/><path class="figure-thin" d="M139 48L149 76M143 72L149 76L152 69"/>`,
+        hinge: `
+          <path class="figure-thin" d="M18 129H142M183 129H307"/>
+          <circle class="figure-line" cx="80" cy="27" r="9"/><path class="figure-line" d="M80 36V82M80 82L61 127M80 82L102 127"/><path class="figure-accent" d="M72 51L70 100"/>
+          <circle class="figure-line" cx="213" cy="57" r="9"/><path class="figure-line" d="M221 61L258 84M258 84L241 127M258 84L280 127"/><path class="figure-accent" d="M235 70L230 116"/><path class="figure-thin" d="M131 52L148 70M140 70H148V62"/>`,
+        splitSquat: `
+          <path class="figure-thin" d="M18 129H142M183 129H307"/>
+          <circle class="figure-line" cx="73" cy="28" r="9"/><path class="figure-line" d="M73 37V82M73 82L43 127M73 82L116 127"/><path class="figure-accent" d="M52 54H94"/>
+          <circle class="figure-line" cx="238" cy="50" r="9"/><path class="figure-line" d="M238 59V91M238 91L203 102L198 128M238 91L281 111L298 128"/><path class="figure-accent" d="M216 70H259"/><path class="figure-thin" d="M143 50V78M138 73L143 78L148 73"/>`,
+        legCurl: `
+          <path class="figure-equipment" d="M23 83H122M188 83H287M49 83V120M214 83V120"/>
+          <circle class="figure-line" cx="42" cy="45" r="9"/><path class="figure-line" d="M50 49L80 74M80 74L111 84M80 74L59 118"/><path class="figure-accent" d="M111 84L130 118"/>
+          <circle class="figure-line" cx="207" cy="45" r="9"/><path class="figure-line" d="M215 49L245 74M245 74L276 84M245 74L224 118"/><path class="figure-accent" d="M276 84L263 53"/><path class="figure-thin" d="M139 98L151 75M145 78L151 75L153 82"/>`,
+        calfRaise: `
+          <path class="figure-thin" d="M18 129H142M183 129H307"/>
+          <circle class="figure-line" cx="80" cy="29" r="9"/><path class="figure-line" d="M80 38V84M80 84L63 127M80 84L101 127"/><path class="figure-accent" d="M56 127H108"/>
+          <circle class="figure-line" cx="245" cy="23" r="9"/><path class="figure-line" d="M245 32V78M245 78L228 121M245 78L266 121"/><path class="figure-accent" d="M221 125L274 119"/><path class="figure-thin" d="M144 106V80M139 85L144 80L149 85"/>`,
+        plank: `
+          <path class="figure-thin" d="M18 129H142M183 129H307"/>
+          <circle class="figure-line" cx="35" cy="77" r="9"/><path class="figure-line" d="M44 80L106 91L132 126M66 84L52 113L30 113"/><path class="figure-ghost" d="M44 80L83 112L132 126"/>
+          <circle class="figure-line" cx="200" cy="77" r="9"/><path class="figure-accent" d="M209 80L271 91L297 126M231 84L217 113L195 113"/><path class="figure-thin" d="M212 67L287 82"/>`,
+        overheadPress: `
+          <circle class="figure-line" cx="80" cy="34" r="9"/><path class="figure-line" d="M80 43V91M80 91L58 128M80 91L102 128"/><path class="figure-accent" d="M77 53L56 62L45 48M83 53L104 62L115 48"/>
+          <circle class="figure-line" cx="245" cy="42" r="9"/><path class="figure-line" d="M245 51V91M245 91L223 128M245 91L267 128"/><path class="figure-accent" d="M242 55L224 20M248 55L266 20"/><path class="figure-thin" d="M144 62V35M139 40L144 35L149 40"/>`,
+        rearFly: `
+          <circle class="figure-line" cx="80" cy="36" r="9"/><path class="figure-line" d="M80 45L91 89M91 89L65 128M91 89L112 128"/><path class="figure-accent" d="M83 55L66 87M85 55L104 86"/>
+          <circle class="figure-line" cx="245" cy="36" r="9"/><path class="figure-line" d="M245 45L256 89M256 89L230 128M256 89L277 128"/><path class="figure-accent" d="M248 55L203 69M250 55L298 69"/><path class="figure-thin" d="M120 82L140 65M133 65H140V72"/>`,
+        hipThrust: `
+          <path class="figure-equipment" d="M18 85H65M183 85H230"/><path class="figure-thin" d="M18 129H142M183 129H307"/>
+          <circle class="figure-line" cx="45" cy="72" r="9"/><path class="figure-line" d="M54 76L91 104M91 104L119 126M91 104L69 126"/><path class="figure-accent" d="M80 99H103"/>
+          <circle class="figure-line" cx="210" cy="72" r="9"/><path class="figure-line" d="M219 76L260 76M260 76L292 126M260 76L230 126"/><path class="figure-accent" d="M245 70H270"/><path class="figure-thin" d="M144 99V72M139 77L144 72L149 77"/>`,
+        legExtension: `
+          <path class="figure-equipment" d="M24 82H99M189 82H264M49 82V119M214 82V119"/>
+          <circle class="figure-line" cx="44" cy="43" r="9"/><path class="figure-line" d="M52 48L78 74M78 74L111 83M78 74L58 118"/><path class="figure-accent" d="M111 83L112 119"/>
+          <circle class="figure-line" cx="209" cy="43" r="9"/><path class="figure-line" d="M217 48L243 74M243 74L276 83M243 74L223 118"/><path class="figure-accent" d="M276 83L304 83"/><path class="figure-thin" d="M137 102L151 82M145 84L151 82L152 89"/>`,
+        crunch: `
+          <path class="figure-thin" d="M18 129H142M183 129H307"/>
+          <circle class="figure-line" cx="37" cy="101" r="9"/><path class="figure-line" d="M46 101H91L116 126M91 101L66 126"/><path class="figure-accent" d="M52 98L70 88"/>
+          <circle class="figure-line" cx="216" cy="78" r="9"/><path class="figure-line" d="M224 83L256 102L281 126M256 102L231 126"/><path class="figure-accent" d="M229 84L246 73"/><path class="figure-thin" d="M140 93L151 72M145 75L151 72L153 79"/>`
+      };
+      const scene = scenes[kind] || scenes.squat;
+      return `<svg viewBox="0 0 320 158" role="img" aria-label="${escapeHTML(label)}起始和结束位置示意图">
+        <title>${escapeHTML(label)}动作轨迹示意</title>
+        <path class="figure-thin" d="M160 14V136" opacity=".22"/>
+        ${scene}
+        <text class="figure-label" x="80" y="151" text-anchor="middle">起始位置</text>
+        <text class="figure-label" x="245" y="151" text-anchor="middle">结束位置</text>
+      </svg>`;
+    }
+
+    function renderExerciseGuide(exercise) {
+      const guide = EXERCISE_GUIDES[GUIDE_ALIASES[exercise.id] || exercise.id];
+      if (!guide) return '';
+      return `<details class="exercise-guide">
+        <summary>
+          <span class="guide-summary-copy"><span class="guide-play" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M8 5l10 7-10 7z"/></svg></span><span>动作教学</span><span class="guide-meta">离线图解 · 3步要领</span></span>
+          <svg class="guide-chevron icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        </summary>
+        <div class="guide-body">
+          <div class="guide-visual">
+            <div class="guide-figure">${guideFigure(guide.figure, exercise.name)}</div>
+            <div class="guide-targets" aria-label="主要训练肌群">${guide.targets.map(item => `<span>${item}</span>`).join('')}</div>
+            <p class="guide-warning">示意图用于理解方向，不代表每个人都要做到同样幅度。出现锐痛、麻木或关节不稳时立即停止。</p>
+          </div>
+          <div class="guide-copy">
+            <section class="guide-block"><h4>起始设置</h4><p class="small muted">${guide.setup}</p></section>
+            <section class="guide-block"><h4>怎么做</h4><ol class="guide-steps">${guide.steps.map(step => `<li>${step}</li>`).join('')}</ol></section>
+            <section class="guide-block guide-cue"><p><strong>动作口令</strong>${guide.cue}</p><p><strong>呼吸</strong>${guide.breathe}</p></section>
+            <section class="guide-block guide-cue"><p><strong>常见错误</strong>${guide.mistake}</p><p><strong>不舒服时</strong>${guide.alternative}</p></section>
+          </div>
+        </div>
+      </details>`;
+    }
+
+    function previousExercise(exerciseId, beforeDate) {
+      return Object.values(state.workouts)
+        .filter(session => session.date < beforeDate && session.entries?.[exerciseId])
+        .sort((a, b) => b.date.localeCompare(a.date))[0]?.entries?.[exerciseId] || null;
+    }
+
+    function progressionFor(exercise, date, week) {
+      const previous = previousExercise(exercise.id, date);
+      if ([6, 12].includes(week)) return { text: '减量周：组数减半，重量用上次的90%–95%', weight: previous?.sets?.[0]?.weight || exercise.start || '' };
+      if (!previous) return { text: exercise.start ? `首次建议从 ${exercise.start} kg 校准，保留3次余力` : '首次先找到能稳定完成且保留3次余力的重量', weight: exercise.start || '' };
+      const finished = previous.sets?.filter(set => set.done) || [];
+      const ready = finished.length > 0 && finished.every(set => number(set.reps) >= exercise.max && number(set.rir) >= 1 && number(set.rir) <= 2);
+      const lastWeight = number(finished[0]?.weight);
+      return ready && exercise.increment > 0
+        ? { text: `上次已达上限，本次建议增加 ${exercise.increment} kg`, weight: lastWeight + exercise.increment }
+        : { text: '沿用上次重量，优先增加规范次数', weight: lastWeight || '' };
+    }
+
+    function sessionKey(date, dayId) { return `${date}:${dayId}`; }
+
+    function renderTraining() {
+      const selected = PROGRAM[state.selectedTrainingDay] ? state.selectedTrainingDay : 'upperA';
+      const plan = PROGRAM[selected];
+      const date = localISO();
+      const week = weekFor(date) || 1;
+      const key = sessionKey(date, selected);
+      const session = state.workouts[key] || { date, dayId: selected, entries: {}, completed: false, duration: 0, pain: false, notes: '' };
+      const deload = [6, 12].includes(week);
+      return `${pageHead(`第 ${week} 周${deload ? ' · 减量周' : ''}`, '把有效组记清楚', '重量只是工具。完成次数范围、保留余力和稳定动作，才是减脂期保住肌肉的关键。')}
+        <div class="day-tabs" role="tablist" aria-label="选择训练日">
+          ${Object.entries(PROGRAM).map(([id, item]) => `<button class="day-tab" type="button" role="tab" aria-selected="${id === selected}" data-select-day="${id}">${DAY_NAMES[item.weekday]} · ${item.short}</button>`).join('')}
+        </div>
+        <form id="workoutForm" class="panel">
+          <div class="session-meta">
+            <div class="field"><label for="sessionDate">训练日期</label><input id="sessionDate" name="sessionDate" type="date" value="${session.date}"></div>
+            <div class="field"><label for="sessionDuration">时长 分钟</label><input id="sessionDuration" name="duration" type="number" min="0" max="180" value="${number(session.duration) || ''}" placeholder="45–60"></div>
+            <div><div class="label">本次原则</div><p class="small muted">${deload ? '每个动作组数约减半，重量降低5%–10%，不测极限。' : `复合动作休息2–3分钟，辅助动作60–90秒；保留${week === 1 ? 3 : 2}次余力。`}</p></div>
+            <button class="button" type="submit">保存训练</button>
+          </div>
+          <div class="guide-intro"><div><strong>第一次做动作时先看教学</strong><p>点击每个动作下方的“动作教学”查看轨迹、设置和常见错误；训练中仍以无痛、稳定和可控制的幅度为准。</p></div><span class="status info">内置图解</span></div>
+          <div class="exercise-list">
+            ${plan.exercises.map(exercise => renderExercise(exercise, session, week)).join('')}
+          </div>
+          <div class="panel-pad stack">
+            <div class="field"><label for="sessionNotes">训练备注</label><textarea id="sessionNotes" name="sessionNotes" placeholder="例如：卧推动作稳定，右肩无不适">${escapeHTML(session.notes)}</textarea></div>
+            <label class="checkline"><input type="checkbox" name="pain" ${session.pain ? 'checked' : ''}>出现持续膝盖或小腿疼痛，需要把跑步改为低冲击有氧</label>
+            <label class="checkline"><input type="checkbox" name="completed" ${session.completed ? 'checked' : ''}>本次训练已完成</label>
+          </div>
+        </form>`;
+    }
+
+    function renderExercise(exercise, session, week) {
+      const sets = effectiveSets(exercise.sets, week);
+      const progression = progressionFor(exercise, session.date, week);
+      const saved = session.entries?.[exercise.id]?.sets || [];
+      const rows = Array.from({ length: sets }, (_, index) => {
+        const set = saved[index] || {};
+        const suggestedWeight = set.weight ?? progression.weight;
+        return `<div class="set-number">${index + 1}</div>
+          <input aria-label="${exercise.name}第${index + 1}组重量" name="${exercise.id}.${index}.weight" type="number" min="0" max="500" step="0.5" value="${suggestedWeight ?? ''}" inputmode="decimal">
+          <input aria-label="${exercise.name}第${index + 1}组次数" name="${exercise.id}.${index}.reps" type="number" min="0" max="100" value="${set.reps ?? ''}" inputmode="numeric">
+          <input aria-label="${exercise.name}第${index + 1}组剩余次数" name="${exercise.id}.${index}.rir" type="number" min="0" max="5" step="0.5" value="${set.rir ?? ''}" inputmode="decimal">
+          <input aria-label="${exercise.name}第${index + 1}组完成" name="${exercise.id}.${index}.done" type="checkbox" ${set.done ? 'checked' : ''}>`;
+      }).join('');
+      return `<article class="exercise" data-exercise="${exercise.id}">
+        <div class="exercise-head"><div><h3>${exercise.name}</h3><div class="progression-note">${progression.text}</div></div><div class="prescription">${sets} × ${exercise.min}–${exercise.max}</div></div>
+        ${renderExerciseGuide(exercise)}
+        <div class="set-table"><div class="th">组</div><div class="th">kg</div><div class="th">次数</div><div class="th">RIR</div><div class="th">完成</div>${rows}</div>
+      </article>`;
+    }
+
+    function renderNutrition() {
+      const date = localISO();
+      const log = dayLog(date);
+      const weekStart = plusDays(date, -((parseLocal(date).getDay() + 6) % 7));
+      const chickenCount = Object.entries(state.daily).filter(([day, value]) => day >= weekStart && value.friedChicken).length;
+      return `${pageHead('2150 kcal · 先执行14天', '外卖也能稳定减脂', '不追求每一口都精确；固定选择、给油酱留误差，并让蛋白质每天达标。')}
+        <section class="metric-strip" aria-label="今日营养完成情况">
+          ${metric('热量', log.calories, state.profile.calorieTarget, 'kcal', true)}
+          ${metric('蛋白质', log.protein, state.profile.proteinTarget, 'g')}
+          ${metric('脂肪', log.fat, state.profile.fatTarget, 'g', true)}
+          ${metric('碳水', log.carbs, state.profile.carbTarget, 'g')}
+        </section>
+        <div class="dashboard-grid">
+          <form id="nutritionForm" class="panel panel-pad stack-lg">
+            <div class="panel-title"><h2>今日完整记录</h2><span class="small muted">${fmtDate(date)}</span></div>
+            <div class="form-grid cols-4">
+              <div class="field"><label for="nCalories">热量 kcal</label><input id="nCalories" name="calories" type="number" min="0" max="6000" value="${number(log.calories) || ''}"></div>
+              <div class="field"><label for="nProtein">蛋白质 g</label><input id="nProtein" name="protein" type="number" min="0" max="400" value="${number(log.protein) || ''}"></div>
+              <div class="field"><label for="nFat">脂肪 g</label><input id="nFat" name="fat" type="number" min="0" max="300" value="${number(log.fat) || ''}"></div>
+              <div class="field"><label for="nCarbs">碳水 g</label><input id="nCarbs" name="carbs" type="number" min="0" max="800" value="${number(log.carbs) || ''}"></div>
+              <div class="field"><label for="nSteps">步数</label><input id="nSteps" name="steps" type="number" min="0" max="60000" value="${number(log.steps) || ''}"></div>
+              <div class="field"><label for="nWater">饮水 L</label><input id="nWater" name="water" type="number" min="0" max="10" step="0.1" value="${number(log.water) || ''}"></div>
+              <div class="field"><label for="nVeg">蔬菜 g</label><input id="nVeg" name="vegetables" type="number" min="0" max="2000" value="${number(log.vegetables) || ''}"></div>
+              <div class="field"><label for="nFruit">水果份数</label><input id="nFruit" name="fruit" type="number" min="0" max="10" step="0.5" value="${number(log.fruit) || ''}"></div>
+              <div class="field"><label for="nRun">跑步/跑走 分钟</label><input id="nRun" name="runMinutes" type="number" min="0" max="300" value="${number(log.runMinutes) || ''}"></div>
+              <div class="field full"><label class="checkline"><input type="checkbox" name="friedChicken" ${log.friedChicken ? 'checked' : ''}>今天使用了计划内炸鸡餐（本周已记 ${chickenCount} 次）</label></div>
+              <div class="field full"><label for="nNotes">饮食备注</label><textarea id="nNotes" name="notes" placeholder="例如：晚餐炸鸡两块，无糖饮料，没有薯条">${escapeHTML(log.notes)}</textarea></div>
+            </div>
+            <button class="button" type="submit">保存饮食记录</button>
+          </form>
+          <aside class="stack-lg">
+            <section class="panel panel-pad stack">
+              <div class="panel-title"><h2>外卖误差计算</h2></div>
+              <div class="field"><label for="takeoutEstimate">软件显示的热量 kcal</label><input id="takeoutEstimate" type="number" min="0" max="4000" placeholder="例如 720"></div>
+              <div class="callout"><span class="small muted">按油和酱汁增加15%</span><div id="takeoutResult" class="metric-value mono">—</div></div>
+              <button class="button secondary" type="button" id="calcTakeout">计算并填入今日热量</button>
+            </section>
+            <section class="panel panel-pad">
+              <div class="panel-title"><h2>点餐固定句</h2></div>
+              <p>“少油、酱汁分装、米饭七成、增加蔬菜。”</p>
+              <ul class="list small muted" style="margin-top:var(--space-4)"><li>每餐150–220 g瘦肉或鱼虾</li><li>熟米饭150–200 g，两拳蔬菜</li><li>炸鸡每周一餐，600–800 kcal</li><li>两块炸鸡或一个汉堡；不叠加薯条、甜点和含糖饮料</li></ul>
+            </section>
+          </aside>
+        </div>`;
+    }
+
+    function measurementSeries(key) {
+      return [...state.measurements].filter(item => number(item[key]) > 0).sort((a, b) => a.date.localeCompare(b.date));
+    }
+
+    function renderChart(items, key, unit) {
+      if (items.length < 2) return `<div class="chart-empty"><strong>至少需要两次记录</strong><br>录入后会显示趋势，而不是单次波动。</div>`;
+      const values = items.map(item => number(item[key]));
+      const min = Math.min(...values); const max = Math.max(...values); const range = max - min || 1;
+      const width = 680; const height = 210; const xPad = 44; const yPad = 30;
+      const points = items.map((item, index) => {
+        const x = xPad + (index / Math.max(1, items.length - 1)) * (width - xPad * 2);
+        const y = yPad + ((max - number(item[key])) / range) * (height - yPad * 2);
+        return { x, y, item };
+      });
+      return `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="${key === 'weight' ? '体重' : '腰围'}趋势图">
+        <line class="chart-grid" x1="${xPad}" y1="${yPad}" x2="${xPad}" y2="${height - yPad}"/><line class="chart-grid" x1="${xPad}" y1="${height - yPad}" x2="${width - xPad}" y2="${height - yPad}"/>
+        <polyline class="chart-line" points="${points.map(p => `${p.x},${p.y}`).join(' ')}"/>
+        ${points.map((p, index) => `<circle class="chart-dot" cx="${p.x}" cy="${p.y}" r="4"><title>${p.item.date}: ${p.item[key]} ${unit}</title></circle>${(index === 0 || index === points.length - 1) ? `<text class="chart-label" x="${p.x}" y="${height - 8}" text-anchor="middle">${fmtDate(p.item.date)}</text><text class="chart-label" x="${p.x}" y="${p.y - 10}" text-anchor="middle">${p.item[key]}</text>` : ''}`).join('')}
+      </svg>`;
+    }
+
+    function estimatedBench(item) { return number(item.benchWeight) * (1 + number(item.benchReps) / 30); }
+
+    function recommendation() {
+      const today = localISO(); const currentStart = plusDays(today, -6); const previousStart = plusDays(today, -13); const previousEnd = plusDays(today, -7);
+      const recentPain = Object.values(state.workouts).some(session => session.date >= previousStart && session.date <= today && session.pain);
+      if (recentPain && !state.profile.lowImpactMode) return { tone: 'bad', title: '先处理持续疼痛', text: '停止跑步，改为同等时长的坡走、椭圆机或自行车。锐痛持续或影响日常活动时寻求专业评估。', type: 'lowImpact' };
+      const weights = measurementSeries('weight');
+      const average = entries => entries.length ? entries.reduce((sum, item) => sum + number(item.weight), 0) / entries.length : null;
+      const currentEntries = weights.filter(item => item.date >= currentStart && item.date <= today);
+      const previousEntries = weights.filter(item => item.date >= previousStart && item.date <= previousEnd);
+      const currentAvg = average(currentEntries); const previousAvg = average(previousEntries);
+      const waistItems = measurementSeries('waist'); const recentWaist = waistItems.at(-1); const priorWaist = waistItems.length > 1 ? waistItems.at(-2) : null;
+      const waistDelta = recentWaist && priorWaist ? number(recentWaist.waist) - number(priorWaist.waist) : null;
+      const benchItems = [...state.measurements].filter(item => number(item.benchWeight) && number(item.benchReps)).sort((a, b) => a.date.localeCompare(b.date));
+      const benchChange = benchItems.length > 1 ? ((estimatedBench(benchItems.at(-1)) - estimatedBench(benchItems.at(-2))) / estimatedBench(benchItems.at(-2))) * 100 : null;
+      const loggedDays = Object.entries(state.daily).filter(([date, log]) => date >= previousStart && date <= today && number(log.calories) > 0);
+      const adherentDays = loggedDays.filter(([, log]) => Math.abs(number(log.calories) - state.profile.calorieTarget) <= 100 && number(log.protein) >= state.profile.proteinTarget - 10).length;
+      const adherence = loggedDays.length ? adherentDays / loggedDays.length * 100 : null;
+      if (currentEntries.length < 3 || previousEntries.length < 3) return { tone: 'info', title: '继续收集数据', text: '最近两个7天周期各需要至少3次体重记录。现在不要调整热量。', type: null };
+      const lossRate = ((previousAvg - currentAvg) / previousAvg) * 100;
+      if (lossRate > .8 || (benchChange !== null && benchChange < -5)) return { tone: 'warn', title: '下降偏快或力量受影响', text: `周均下降 ${round(lossRate, 2)}%；建议每日增加150 kcal，优先加碳水，并把一次跑步缩短10分钟。`, type: 'calorieUp', detail: { lossRate, adherence, waistDelta, benchChange } };
+      if (lossRate >= .3 && lossRate <= .6) return { tone: 'good', title: '速度合适，保持不变', text: `周均下降 ${round(lossRate, 2)}%，处在保肌目标区间。不要因为某一天体重反弹而改计划。`, type: null, detail: { lossRate, adherence, waistDelta, benchChange } };
+      if (Math.abs(lossRate) < .2 && waistDelta !== null && waistDelta <= -.3 && (benchChange === null || benchChange >= -2)) return { tone: 'good', title: '正在发生身体重组', text: `体重变化小，但腰围下降 ${round(Math.abs(waistDelta), 1)} cm，力量稳定。保持现有热量与训练。`, type: null, detail: { lossRate, adherence, waistDelta, benchChange } };
+      if (lossRate < .2 && waistDelta !== null && waistDelta > -.2) {
+        if (adherence === null || loggedDays.length < 12 || adherence < 85) return { tone: 'warn', title: '先提高记录与执行率', text: `当前可验证执行率为 ${adherence === null ? '不足' : `${round(adherence, 0)}%`}；两周至少记录12天并达到85%，不要急着砍热量。`, type: null };
+        if (activityTargets().steps < 9000) return { tone: 'warn', title: '先把步数提高到9000', text: `连续两周下降不足0.2%，腰围也未明显变化，且执行率 ${round(adherence, 0)}%。优先增加低疲劳活动。`, type: 'stepsUp' };
+        if (state.profile.calorieTarget > 1900) return { tone: 'warn', title: '每日减少150 kcal', text: '步数已经达到9000，下一步把热量减少150 kcal；蛋白质保持不变，主要从脂肪或碳水中减。', type: 'calorieDown' };
+        return { tone: 'bad', title: '暂停自动下调', text: '当前目标已接近1900 kcal下限。不要继续自行削减，请重新核对外卖、零食、饮料和称量误差。', type: null };
+      }
+      return { tone: 'info', title: '再观察一周', text: `当前周均变化 ${round(lossRate, 2)}%，暂不满足调整条件。保持计划并继续记录腰围与力量。`, type: null };
+    }
+
+    function renderProgress() {
+      const weightItems = measurementSeries('weight'); const waistItems = measurementSeries('waist'); const advice = recommendation(); const currentWeek = weekFor() || 1;
+      const latest = [...state.measurements].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 12);
+      return `${pageHead('趋势优先，不看单日', '让两周数据替你做决定', '每周至少称重3次、腰围1次；只有满足连续两周条件，才改变步数或热量。')}
+        <section class="panel panel-pad" style="margin-bottom:var(--space-6)">
+          <div class="panel-title"><div><span class="status ${advice.tone}">${advice.title}</span></div>${advice.type ? `<button class="button small-button" data-apply-advice="${advice.type}">应用建议</button>` : ''}</div>
+          <p>${advice.text}</p>
+        </section>
+        <div class="dashboard-grid">
+          <div class="stack-lg">
+            <section class="panel panel-pad"><div class="panel-title"><h2>体重趋势</h2><span class="small muted">kg</span></div><div class="chart">${renderChart(weightItems, 'weight', 'kg')}</div></section>
+            <section class="panel panel-pad"><div class="panel-title"><h2>腰围趋势</h2><span class="small muted">cm</span></div><div class="chart">${renderChart(waistItems, 'waist', 'cm')}</div></section>
+          </div>
+          <form id="measurementForm" class="panel panel-pad stack">
+            <div class="panel-title"><h2>录入测量</h2></div>
+            <div class="field"><label for="mDate">日期</label><input id="mDate" name="date" type="date" value="${localISO()}" required></div>
+            <div class="form-grid">
+              <div class="field"><label for="mWeight">体重 kg</label><input id="mWeight" name="weight" type="number" min="40" max="180" step="0.1" placeholder="例如 72.4"></div>
+              <div class="field"><label for="mWaist">腰围 cm</label><input id="mWaist" name="waist" type="number" min="50" max="180" step="0.1" placeholder="例如 83.5"></div>
+              <div class="field"><label for="mBenchWeight">卧推重量 kg</label><input id="mBenchWeight" name="benchWeight" type="number" min="0" max="300" step="0.5" placeholder="例如 55"></div>
+              <div class="field"><label for="mBenchReps">完成次数</label><input id="mBenchReps" name="benchReps" type="number" min="0" max="30" placeholder="例如 6"></div>
+            </div>
+            <div class="field"><label for="mNote">备注</label><input id="mNote" name="note" type="text" maxlength="80" placeholder="同一台秤、训练前"></div>
+            <button class="button" type="submit">保存测量</button>
+          </form>
+        </div>
+        <section class="panel panel-pad" style="margin-top:var(--space-6)"><div class="panel-title"><h2>12周路线</h2><span class="small muted">第6、12周减量</span></div><div class="timeline">${Array.from({ length: 12 }, (_, index) => { const week = index + 1; const status = week < currentWeek ? 'done' : week === currentWeek ? 'current' : ''; return `<div class="week-node ${status}"><strong>W${week}</strong><span>${[6, 12].includes(week) ? '减量' : week === 1 ? '校准' : '推进'}</span></div>`; }).join('')}</div></section>
+        <section class="panel panel-pad" style="margin-top:var(--space-6)"><div class="panel-title"><h2>最近记录</h2><span class="small muted">最多显示12条</span></div>${latest.length ? `<div class="data-table-wrap"><table><thead><tr><th>日期</th><th>体重</th><th>腰围</th><th>卧推</th><th></th></tr></thead><tbody>${latest.map(item => `<tr><td>${item.date}</td><td>${item.weight ? `${item.weight} kg` : '—'}</td><td>${item.waist ? `${item.waist} cm` : '—'}</td><td>${item.benchWeight ? `${item.benchWeight}×${item.benchReps || '—'}` : '—'}</td><td><button class="button ghost small-button" type="button" data-delete-measurement="${item.id}">删除</button></td></tr>`).join('')}</tbody></table></div>` : `<div class="empty"><strong>还没有测量记录</strong>从今天的体重和腰围开始。</div>`}</section>`;
+    }
+
+    function renderSettings() {
+      const p = state.profile;
+      return `${pageHead('本机离线保存', '校准你的起点与目标', '数据只保存在当前浏览器。建议每周导出一次备份，避免清理浏览器后丢失记录。')}
+        <div class="dashboard-grid">
+          <form id="profileForm" class="panel panel-pad stack-lg">
+            <div class="panel-title"><h2>个人与计划</h2></div>
+            <div class="form-grid">
+              <div class="field"><label for="pStart">计划开始日期</label><input id="pStart" name="startDate" type="date" value="${p.startDate}" required></div>
+              <div class="field"><label for="pHeight">身高 cm</label><input id="pHeight" name="height" type="number" min="120" max="230" value="${p.height}" required></div>
+              <div class="field"><label for="pWeight">起始体重 kg</label><input id="pWeight" name="startWeight" type="number" min="40" max="180" step="0.1" value="${p.startWeight ?? ''}" placeholder="健身房称重"></div>
+              <div class="field"><label for="pWaist">起始腰围 cm</label><input id="pWaist" name="startWaist" type="number" min="50" max="180" step="0.1" value="${p.startWaist ?? ''}" placeholder="肚脐水平"></div>
+            </div>
+            <div class="panel-title" style="margin-bottom:0"><h2>每日目标</h2></div>
+            <div class="form-grid cols-4">
+              <div class="field"><label for="pCal">热量 kcal</label><input id="pCal" name="calorieTarget" type="number" min="1900" max="3500" step="50" value="${p.calorieTarget}"></div>
+              <div class="field"><label for="pPro">蛋白质 g</label><input id="pPro" name="proteinTarget" type="number" min="80" max="250" step="5" value="${p.proteinTarget}"></div>
+              <div class="field"><label for="pFat">脂肪 g</label><input id="pFat" name="fatTarget" type="number" min="40" max="150" step="5" value="${p.fatTarget}"></div>
+              <div class="field"><label for="pCarb">碳水 g</label><input id="pCarb" name="carbTarget" type="number" min="100" max="500" step="5" value="${p.carbTarget}"></div>
+            </div>
+            <p class="input-help">默认按约70–75 kg设置：2150 kcal、蛋白质150 g、脂肪60 g、碳水250 g。准确体重若不在68–80 kg，请重新评估热量。</p>
+            <label class="checkline"><input type="checkbox" name="lowImpactMode" ${p.lowImpactMode ? 'checked' : ''}>当前使用低冲击有氧（坡走、椭圆机或自行车）</label>
+            ${number(p.startWeight) > 0 && (number(p.startWeight) < 68 || number(p.startWeight) > 80) ? `<div class="callout"><strong>2150 kcal 目前只是暂定值</strong><p class="small muted">你的起始体重不在68–80 kg估算范围内，请重新评估起始热量，不要机械套用默认值。</p></div>` : ''}
+            <button class="button" type="submit">保存设置</button>
+          </form>
+          <aside class="stack-lg">
+            <section class="panel panel-pad stack"><div class="panel-title"><h2>数据备份</h2></div><button class="button secondary" type="button" id="exportData">导出 JSON 备份</button><button class="button ghost" type="button" id="importData">导入备份</button><p class="small muted">导入会用备份覆盖当前数据；导入前会再次确认。</p></section>
+            <section class="panel panel-pad danger-zone stack"><div class="panel-title"><h2>重新开始</h2></div><p class="small muted">清除全部训练、饮食和测量记录，无法撤销。</p><button class="button danger" type="button" id="resetData">清除全部数据</button></section>
+          </aside>
+        </div>
+        <section class="panel panel-pad" style="margin-top:var(--space-6)">
+          <div class="panel-title"><h2>使用边界与依据</h2></div>
+          <div class="callout" style="margin-bottom:var(--space-4)"><p>这是健康成人的自我管理工具，不替代医生或注册营养师。出现胸痛、眩晕、异常气短或持续关节锐痛时停止训练并就医；有肾病、肝病、进食障碍或运动禁忌时，不直接使用本方案。</p></div>
+          <div class="source-list"><a href="https://acsm.org/resistance-training-guidelines-update-2026/" target="_blank" rel="noreferrer">ACSM 2026 抗阻训练指南</a><a href="https://pubmed.ncbi.nlm.nih.gov/21558571/" target="_blank" rel="noreferrer">运动员渐进减重速度研究</a><a href="https://jissn.biomedcentral.com/articles/10.1186/s12970-017-0177-8" target="_blank" rel="noreferrer">ISSN 蛋白质立场声明</a><a href="https://www.who.int/publications/i/item/9789240014886" target="_blank" rel="noreferrer">WHO 身体活动指南</a></div>
+        </section>`;
+    }
+
+    function updateActiveNav() {
+      const current = route();
+      document.querySelectorAll('[data-route]').forEach(link => link.setAttribute('aria-current', link.dataset.route === current ? 'page' : 'false'));
+    }
+
+    function render() {
+      const views = { today: renderToday, training: renderTraining, nutrition: renderNutrition, progress: renderProgress, settings: renderSettings };
+      const current = route();
+      document.getElementById('app').innerHTML = views[current]();
+      updateActiveNav();
+      bindView(current);
+    }
+
+    function formNumbers(form, fields) {
+      return Object.fromEntries(fields.map(field => [field, number(new FormData(form).get(field))]));
+    }
+
+    function bindView(current) {
+      if (current === 'today') {
+        document.getElementById('quickLog')?.addEventListener('submit', event => {
+          event.preventDefault(); const date = localISO(); const values = formNumbers(event.currentTarget, ['calories', 'protein', 'steps', 'water']);
+          state.daily[date] = { ...dayLog(date), ...values }; saveState('今天的记录已保存'); render();
+        });
+        document.querySelector('[data-go-training]')?.addEventListener('click', event => { state.selectedTrainingDay = event.currentTarget.dataset.goTraining; saveState(); location.hash = '#training'; });
+      }
+
+      if (current === 'training') {
+        document.querySelectorAll('[data-select-day]').forEach(button => button.addEventListener('click', () => { state.selectedTrainingDay = button.dataset.selectDay; saveState(); render(); }));
+        document.getElementById('sessionDate')?.addEventListener('change', event => {
+          const oldKey = sessionKey(localISO(), state.selectedTrainingDay); const newKey = sessionKey(event.target.value, state.selectedTrainingDay);
+          if (state.workouts[newKey]) { renderSessionForDate(event.target.value); } else if (state.workouts[oldKey]) { /* preserve current until submit */ }
+        });
+        document.getElementById('workoutForm')?.addEventListener('submit', saveWorkout);
+      }
+
+      if (current === 'nutrition') {
+        document.getElementById('nutritionForm')?.addEventListener('submit', event => {
+          event.preventDefault(); const form = event.currentTarget; const date = localISO();
+          const values = formNumbers(form, ['calories', 'protein', 'fat', 'carbs', 'steps', 'water', 'vegetables', 'fruit', 'runMinutes']);
+          const monday = plusDays(date, -((parseLocal(date).getDay() + 6) % 7));
+          const otherChickenMeals = Object.entries(state.daily).filter(([day, value]) => day >= monday && day !== date && value.friedChicken).length;
+          state.daily[date] = { ...dayLog(date), ...values, friedChicken: form.friedChicken.checked, notes: form.notes.value.trim() };
+          saveState(form.friedChicken.checked && otherChickenMeals >= 1 ? '已保存；本周炸鸡超过一次，下一餐恢复正常计划即可' : '饮食记录已保存'); render();
+        });
+        document.getElementById('calcTakeout')?.addEventListener('click', () => {
+          const estimate = number(document.getElementById('takeoutEstimate').value); if (!estimate) return toast('先填写软件显示的热量', true);
+          const result = Math.round(estimate * 1.15); document.getElementById('takeoutResult').textContent = `${result} kcal`; document.getElementById('nCalories').value = result;
+        });
+      }
+
+      if (current === 'progress') {
+        document.getElementById('measurementForm')?.addEventListener('submit', event => {
+          event.preventDefault(); const form = event.currentTarget; const data = new FormData(form);
+          const item = { id: `${data.get('date')}-${Date.now()}`, date: data.get('date'), weight: number(data.get('weight')) || null, waist: number(data.get('waist')) || null, benchWeight: number(data.get('benchWeight')) || null, benchReps: number(data.get('benchReps')) || null, note: String(data.get('note') || '').trim() };
+          if (!item.weight && !item.waist && !item.benchWeight) return toast('至少填写体重、腰围或卧推中的一项', true);
+          state.measurements.push(item); state.measurements.sort((a, b) => a.date.localeCompare(b.date)); saveState('测量记录已保存'); render();
+        });
+        document.querySelectorAll('[data-delete-measurement]').forEach(button => button.addEventListener('click', () => { state.measurements = state.measurements.filter(item => item.id !== button.dataset.deleteMeasurement); saveState('记录已删除'); render(); }));
+        document.querySelector('[data-apply-advice]')?.addEventListener('click', event => applyAdvice(event.currentTarget.dataset.applyAdvice));
+      }
+
+      if (current === 'settings') {
+        document.getElementById('profileForm')?.addEventListener('submit', event => {
+          event.preventDefault(); const form = event.currentTarget; const data = new FormData(form);
+          const values = formNumbers(form, ['height', 'startWeight', 'startWaist', 'calorieTarget', 'proteinTarget', 'fatTarget', 'carbTarget']);
+          state.profile = { ...state.profile, ...values, startDate: String(data.get('startDate')), lowImpactMode: form.lowImpactMode.checked };
+          if (state.profile.calorieTarget < 1900) state.profile.calorieTarget = 1900;
+          if ((values.startWeight || values.startWaist) && !state.measurements.some(item => item.date === state.profile.startDate && (item.weight || item.waist))) {
+            state.measurements.push({ id: `${state.profile.startDate}-baseline`, date: state.profile.startDate, weight: values.startWeight || null, waist: values.startWaist || null, benchWeight: null, benchReps: null, note: '计划起始基线' });
+            state.measurements.sort((a, b) => a.date.localeCompare(b.date));
+          }
+          saveState('设置已保存'); render();
+        });
+        document.getElementById('exportData')?.addEventListener('click', exportData);
+        document.getElementById('importData')?.addEventListener('click', () => document.getElementById('importInput').click());
+        document.getElementById('resetData')?.addEventListener('click', resetData);
+      }
+    }
+
+    function renderSessionForDate(date) {
+      const key = sessionKey(date, state.selectedTrainingDay); const session = state.workouts[key];
+      if (!session) return;
+      document.getElementById('sessionNotes').value = session.notes || '';
+      document.getElementById('sessionDuration').value = session.duration || '';
+      document.querySelector('[name="pain"]').checked = Boolean(session.pain);
+      document.querySelector('[name="completed"]').checked = Boolean(session.completed);
+      Object.entries(session.entries || {}).forEach(([exerciseId, entry]) => entry.sets.forEach((set, index) => {
+        ['weight', 'reps', 'rir'].forEach(field => { const input = document.querySelector(`[name="${exerciseId}.${index}.${field}"]`); if (input) input.value = set[field] ?? ''; });
+        const done = document.querySelector(`[name="${exerciseId}.${index}.done"]`); if (done) done.checked = Boolean(set.done);
+      }));
+      toast('已载入该日期的训练记录');
+    }
+
+    function saveWorkout(event) {
+      event.preventDefault(); const form = event.currentTarget; const data = new FormData(form); const date = String(data.get('sessionDate')); const dayId = state.selectedTrainingDay; const plan = PROGRAM[dayId]; const week = weekFor(date) || 1; const entries = {};
+      plan.exercises.forEach(exercise => {
+        const sets = Array.from({ length: effectiveSets(exercise.sets, week) }, (_, index) => ({
+          weight: number(data.get(`${exercise.id}.${index}.weight`)) || null,
+          reps: number(data.get(`${exercise.id}.${index}.reps`)) || null,
+          rir: data.get(`${exercise.id}.${index}.rir`) === '' ? null : number(data.get(`${exercise.id}.${index}.rir`)),
+          done: data.get(`${exercise.id}.${index}.done`) === 'on'
+        }));
+        entries[exercise.id] = { sets };
+      });
+      const pain = data.get('pain') === 'on';
+      state.workouts[sessionKey(date, dayId)] = { date, dayId, entries, duration: number(data.get('duration')) || null, pain, notes: String(data.get('sessionNotes') || '').trim(), completed: data.get('completed') === 'on' };
+      saveState(pain ? '训练已保存；请立即把跑步改为低冲击有氧' : '训练记录已保存'); render();
+    }
+
+    function applyAdvice(type) {
+      if (type === 'stepsUp') state.profile.stepOverride = 9000;
+      if (type === 'calorieDown') state.profile.calorieTarget = Math.max(1900, state.profile.calorieTarget - 150);
+      if (type === 'calorieUp') { state.profile.calorieTarget += 150; state.profile.runOverride = Math.max(10, activityTargets().run - 10); }
+      if (type === 'lowImpact') state.profile.lowImpactMode = true;
+      saveState('调整已应用到计划'); render();
+    }
+
+    function exportData() {
+      const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const link = document.createElement('a');
+      link.href = url; link.download = `稳进备份-${localISO()}.json`; document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url); toast('备份已导出');
+    }
+
+    function resetData() {
+      if (!confirm('确定清除全部记录吗？此操作无法撤销。')) return;
+      state = defaultState(); saveState(); render(); toast('全部数据已清除');
+    }
+
+    document.getElementById('importInput').addEventListener('change', async event => {
+      const file = event.target.files?.[0]; if (!file) return;
+      try {
+        const parsed = JSON.parse(await file.text());
+        if (parsed.version !== 1 || !parsed.profile || !parsed.daily || !parsed.workouts || !Array.isArray(parsed.measurements)) throw new Error('备份格式不兼容');
+        if (!confirm('导入会覆盖当前数据，确定继续吗？')) return;
+        state = { ...defaultState(), ...parsed, profile: { ...defaultState().profile, ...parsed.profile } }; saveState(); render(); toast('备份已导入');
+      } catch (error) { console.error(error); toast('导入失败：请选择由本应用导出的JSON文件', true); }
+      finally { event.target.value = ''; }
+    });
+
+    function initTheme() {
+      const saved = localStorage.getItem(THEME_KEY); const dark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+    }
+
+    document.getElementById('themeToggle').addEventListener('click', () => {
+      const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'; document.documentElement.dataset.theme = next; localStorage.setItem(THEME_KEY, next);
+    });
+    window.addEventListener('hashchange', render);
+    window.addEventListener('error', event => { console.error(event.error); toast('页面出现错误，请导出备份后刷新', true); });
+
+    initTheme();
+    if (!location.hash) location.hash = '#today'; else render();
+  </script>
+</body>
+</html>
