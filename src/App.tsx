@@ -13,7 +13,8 @@ import { decryptBackup, downloadBackup, encryptBackup } from "./lib/backup";
 import { composeChatGPTHandoff, parseImportedAdvice, type ImportedAdvice } from "./lib/chatgpt";
 import { defaultReadiness, evaluateSetFeedback, respondToLocalCoach, startWorkoutSession } from "./lib/coach";
 import { createSessionLock } from "./lib/crossTab";
-import { copyText, hapticPulse, notifyRestFinished, requestPwaInstall, setScreenAwake, setupPwaInstall } from "./lib/platform";
+import { getLegacyBackup } from "./lib/storage";
+import { cancelRestNotification, copyText, hapticPulse, notifyRestFinished, requestPwaInstall, scheduleRestNotification, setScreenAwake, setupPwaInstall } from "./lib/platform";
 
 type Route = "today" | "coach" | "workout" | "nutrition" | "progress" | "library" | "more";
 const ROUTES = new Set<Route>(["today", "coach", "workout", "nutrition", "progress", "library", "more"]);
@@ -197,15 +198,31 @@ function LiveWorkout({ session, settings, update, onGuide, setToast, locked }: {
     };
     tick(); const timer = window.setInterval(tick, 500); return () => clearInterval(timer);
   }, [session.restEndsAt, session.status, settings.vibration, settings.restNotifications]);
+  useEffect(() => {
+    const id = session.restNotificationId;
+    if (id === null || id === undefined) return;
+    if (session.status === "rest" && session.restEndsAt && settings.restNotifications) {
+      void scheduleRestNotification(session.restEndsAt, id);
+    } else {
+      void cancelRestNotification(id);
+    }
+  }, [session.status, session.restEndsAt, session.restNotificationId, settings.restNotifications]);
 
   const mutateSession = (fn: (draft: WorkoutSession, root: AppSnapshot) => void) => update((root) => { const draft = root.workoutSessions.find((item) => item.id === session.id); if (draft) { fn(draft, root); draft.updatedAt = new Date().toISOString(); } });
-  const finish = () => mutateSession((draft, root) => { draft.status = "completed"; draft.completedAt = new Date().toISOString(); draft.restEndsAt = null; root.activeSessionId = null; });
-  const abandon = () => mutateSession((draft, root) => { draft.status = "abandoned"; draft.completedAt = new Date().toISOString(); root.activeSessionId = null; });
+  const finish = () => { void cancelRestNotification(session.restNotificationId); mutateSession((draft, root) => { draft.status = "completed"; draft.completedAt = new Date().toISOString(); draft.restEndsAt = null; draft.restNotificationId = null; root.activeSessionId = null; }); };
+  const abandon = () => { void cancelRestNotification(session.restNotificationId); mutateSession((draft, root) => { draft.status = "abandoned"; draft.completedAt = new Date().toISOString(); draft.restEndsAt = null; draft.restNotificationId = null; root.activeSessionId = null; }); };
   const advance = () => mutateSession((draft) => {
     const current = draft.exercises[draft.currentExerciseIndex];
     if (draft.currentSetIndex + 1 < current.sets) draft.currentSetIndex += 1;
     else { draft.currentExerciseIndex += 1; draft.currentSetIndex = 0; }
-    draft.status = "active"; draft.restEndsAt = null;
+    void cancelRestNotification(draft.restNotificationId);
+    draft.status = "active"; draft.restEndsAt = null; draft.restNotificationId = null;
+  });
+  const adjustRest = (deltaSeconds: number) => mutateSession((draft) => {
+    if (!draft.restEndsAt) return;
+    const next = new Date(new Date(draft.restEndsAt).getTime() + deltaSeconds * 1_000).toISOString();
+    draft.restEndsAt = next;
+    if (draft.restNotificationId && settings.restNotifications) void scheduleRestNotification(next, draft.restNotificationId);
   });
   const submitSet = () => {
     if (!exercise || locked) return;
@@ -213,27 +230,46 @@ function LiveWorkout({ session, settings, update, onGuide, setToast, locked }: {
     const feedback = evaluateSetFeedback(entry, exercise.name);
     const stop = feedback.find((item) => item.action.type === "safety-hold");
     const last = session.currentExerciseIndex === session.exercises.length - 1 && session.currentSetIndex === exercise.sets - 1;
+    const restEndsAt = new Date(Date.now() + exercise.restSeconds * 1000).toISOString();
+    const restNotificationId = Math.floor(Date.now() % 2_000_000_000);
     mutateSession((draft, root) => {
       draft.setEntries.push(entry); draft.recommendations.unshift(...feedback);
-      if (stop) { draft.status = "safety-hold"; draft.safetyHold = { active: true, reasons: [stop.message], createdAt: new Date().toISOString() }; draft.restEndsAt = null; }
-      else if (last) { draft.status = "completed"; draft.completedAt = new Date().toISOString(); root.activeSessionId = null; }
-      else { draft.status = "rest"; draft.restEndsAt = new Date(Date.now() + exercise.restSeconds * 1000).toISOString(); }
+      if (stop) { draft.status = "safety-hold"; draft.safetyHold = { active: true, reasons: [stop.message], createdAt: new Date().toISOString() }; draft.restEndsAt = null; draft.restNotificationId = null; }
+      else if (last) { draft.status = "summary"; draft.restEndsAt = null; draft.restNotificationId = null; }
+      else { draft.status = "rest"; draft.restEndsAt = restEndsAt; draft.restNotificationId = restNotificationId; }
     });
     if (settings.vibration) hapticPulse(stop ? "warning" : last ? "success" : "light");
-    if (last) setToast("训练完成，所有组已保存");
+    if (last) setToast("最后一组已保存，请完成训练总结");
   };
   const applyRecommendation = (id: string) => mutateSession((draft) => {
     const recommendation = draft.recommendations.find((item) => item.id === id); if (!recommendation) return;
     const action = recommendation.action;
+    recommendation.undo = { exercises: structuredClone(draft.exercises), restEndsAt: draft.restEndsAt, restNotificationId: draft.restNotificationId ?? null };
     if (action.type === "reduce-load") draft.exercises.filter((item) => !action.exerciseId || item.id === action.exerciseId).forEach((item) => { item.startingWeightKg = item.startingWeightKg ? Math.round(item.startingWeightKg * (1 - action.percent / 100) * 2) / 2 : null; });
     if (action.type === "reduce-sets") draft.exercises.filter((item) => !action.exerciseId || item.id === action.exerciseId).forEach((item) => { item.sets = Math.max(1, item.sets - action.amount); });
-    recommendation.requiresConfirmation = false;
+    if (action.type === "replace-exercise") {
+      const exercise = draft.exercises.find((item) => item.id === action.exerciseId);
+      const replacement = EXERCISE_GUIDE_BY_ID.get(action.replacementId);
+      if (exercise && replacement) { exercise.replacementFor = exercise.guideId; exercise.guideId = replacement.id; exercise.name = replacement.name; exercise.startingWeightKg = null; }
+    }
+    recommendation.requiresConfirmation = false; recommendation.appliedAt = new Date().toISOString();
+  });
+  const undoRecommendation = (id: string) => mutateSession((draft) => {
+    const recommendation = draft.recommendations.find((item) => item.id === id); if (!recommendation?.undo) return;
+    const changedAfterApply = recommendation.appliedAt && draft.setEntries.some((item) => item.completedAt && item.completedAt > recommendation.appliedAt!);
+    if (changedAfterApply) { setToast("已有后续组记录，不能撤销这项调整"); return; }
+    void cancelRestNotification(draft.restNotificationId);
+    draft.exercises = structuredClone(recommendation.undo.exercises);
+    draft.restEndsAt = recommendation.undo.restEndsAt;
+    draft.restNotificationId = recommendation.undo.restNotificationId;
+    recommendation.undo = undefined; recommendation.appliedAt = undefined; recommendation.requiresConfirmation = true;
   });
 
   if (locked) return <section className="safety-hold"><LockKey size={42} /><span className="eyebrow">只读保护</span><h1>另一个标签页正在修改本次训练</h1><p>为避免同一组被重复保存，这个页面已停止写入。关闭另一标签页后刷新即可继续。</p></section>;
   if (session.status === "safety-hold") return <section className="safety-hold danger"><StopCircle size={48} weight="fill" /><span className="eyebrow">安全暂停</span><h1>本次训练不能照常继续</h1><p>{session.safetyHold?.reasons.join("；")}</p><div className="safety-actions"><button className="danger-button" onClick={abandon}>结束并保存记录</button><button className="secondary-button" onClick={() => { const found = exercise && EXERCISE_GUIDE_BY_ID.get(exercise.guideId); if (found) onGuide(found); }}>查看无痛设置</button></div><small>胸痛、眩晕、异常气短或严重症状请及时寻求医疗帮助。</small></section>;
-  if (session.status === "ready") return <section className="session-ready"><span className="eyebrow">计划已生成 · {session.timeBudgetMinutes}分钟</span><h1>{PROGRAM[session.workoutDayId].title}</h1><div className="recommendation-stack">{session.recommendations.map((item) => <Recommendation key={item.id} item={item} onApply={() => applyRecommendation(item.id)} />)}</div><div className="session-plan">{session.exercises.map((item, index) => <div key={item.id}><span>{index + 1}</span><b>{item.name}</b><small>{item.sets}组 · {item.repMin}–{item.repMax}次 · RIR {item.targetRir}</small></div>)}</div><div className="warmup-note"><Lightning /><p><b>先做热身组</b>首个复合动作逐级加重2–4组，热身不做到力竭。</p></div><button className="primary-button full" onClick={() => mutateSession((draft) => { draft.status = "active"; })}>热身完成，开始正式组<ArrowRight /></button><button className="text-button centered" onClick={abandon}>取消本次训练</button></section>;
-  if (session.status === "rest") return <section className="rest-screen"><span className="eyebrow">第{session.currentExerciseIndex + 1}/{session.exercises.length}个动作 · 组间休息</span><h2>{exercise?.name}</h2><div className={`rest-ring ${seconds === 0 ? "ready" : ""}`} style={{ "--rest-progress": `${exercise ? (1 - seconds / exercise.restSeconds) * 360 : 0}deg` } as React.CSSProperties}><div><strong>{Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, "0")}</strong><span>{seconds ? "保持呼吸" : "可以开始"}</span></div></div><div className="rest-adjust"><button onClick={() => mutateSession((draft) => { draft.restEndsAt = new Date(new Date(draft.restEndsAt!).getTime() - 30_000).toISOString(); })}>−30秒</button><button onClick={() => mutateSession((draft) => { draft.restEndsAt = new Date(new Date(draft.restEndsAt!).getTime() + 30_000).toISOString(); })}>+30秒</button></div>{session.recommendations.filter((item) => item.requiresConfirmation).slice(0, 1).map((item) => <Recommendation key={item.id} item={item} onApply={() => applyRecommendation(item.id)} />)}<button className="primary-button full" onClick={advance}>{seconds > 0 ? "提前开始下一组" : "开始下一组"}<ArrowRight /></button></section>;
+  if (session.status === "ready") return <section className="session-ready"><span className="eyebrow">计划已生成 · {session.timeBudgetMinutes}分钟</span><h1>{PROGRAM[session.workoutDayId].title}</h1><div className="recommendation-stack">{session.recommendations.map((item) => <Recommendation key={item.id} item={item} onApply={() => applyRecommendation(item.id)} onUndo={() => undoRecommendation(item.id)} />)}</div><div className="session-plan">{session.exercises.map((item, index) => <div key={item.id}><span>{index + 1}</span><b>{item.name}</b><small>{item.sets}组 · {item.repMin}–{item.repMax}次 · RIR {item.targetRir}</small></div>)}</div><div className="warmup-note"><Lightning /><p><b>先做热身组</b>首个复合动作逐级加重2–4组，热身不做到力竭。</p></div><button className="primary-button full" onClick={() => mutateSession((draft) => { draft.status = "active"; })}>热身完成，开始正式组<ArrowRight /></button><button className="text-button centered" onClick={abandon}>取消本次训练</button></section>;
+  if (session.status === "summary") { const done = session.setEntries.filter((item) => item.completedAt); const minutes = Math.max(1, Math.round((Date.now() - new Date(session.startedAt).getTime()) / 60_000)); return <section className="session-ready workout-summary"><span className="eyebrow">训练总结 · 已自动保存</span><h1>本次训练完成</h1><div className="summary-grid"><div><b>{done.length}</b><small>正式组</small></div><div><b>{minutes}</b><small>分钟</small></div><div><b>{session.exercises.length}</b><small>动作</small></div></div><p>回顾主要动作的重量、次数和RIR；下次仅在全部组达到次数上限且保留1–2次余力时加重。</p><button className="primary-button full" onClick={finish}><CheckCircle weight="fill" />保存训练总结</button><button className="text-button centered" onClick={() => go("progress")}>查看进度</button></section>; }
+  if (session.status === "rest") return <section className="rest-screen"><span className="eyebrow">第{session.currentExerciseIndex + 1}/{session.exercises.length}个动作 · 组间休息</span><h2>{exercise?.name}</h2><div className={`rest-ring ${seconds === 0 ? "ready" : ""}`} style={{ "--rest-progress": `${exercise ? (1 - seconds / exercise.restSeconds) * 360 : 0}deg` } as React.CSSProperties}><div><strong>{Math.floor(seconds / 60)}:{String(seconds % 60).padStart(2, "0")}</strong><span>{seconds ? "保持呼吸" : "可以开始"}</span></div></div><div className="rest-adjust"><button onClick={() => adjustRest(-30)}>−30秒</button><button onClick={() => adjustRest(30)}>+30秒</button></div>{session.recommendations.filter((item) => item.requiresConfirmation || item.undo).map((item) => <Recommendation key={item.id} item={item} onApply={() => applyRecommendation(item.id)} onUndo={() => undoRecommendation(item.id)} />)}<button className="primary-button full" onClick={advance}>{seconds > 0 ? "提前开始下一组" : "开始下一组"}<ArrowRight /></button></section>;
   if (!exercise) return <section className="empty-state"><CheckCircle /><p>本次训练已完成。</p><button onClick={finish}>保存总结</button></section>;
   const guide = EXERCISE_GUIDE_BY_ID.get(exercise.guideId);
   const completed = session.setEntries.filter((set) => set.exerciseId === exercise.id && set.completedAt).length;
@@ -244,8 +280,8 @@ function LiveWorkout({ session, settings, update, onGuide, setToast, locked }: {
   </section>;
 }
 
-function Recommendation({ item, onApply }: { item: WorkoutSession["recommendations"][number]; onApply: () => void }) {
-  return <article className={`recommendation ${item.severity}`}><span>{item.severity === "stop" ? <StopCircle /> : item.severity === "warning" ? <Warning /> : <Sparkle />}</span><div><b>{item.title}</b><p>{item.message}</p>{item.requiresConfirmation && item.action.type !== "safety-hold" && item.action.type !== "none" && <button onClick={onApply}>应用调整</button>}</div></article>;
+function Recommendation({ item, onApply, onUndo }: { item: WorkoutSession["recommendations"][number]; onApply: () => void; onUndo?: () => void }) {
+  return <article className={`recommendation ${item.severity}`}><span>{item.severity === "stop" ? <StopCircle /> : item.severity === "warning" ? <Warning /> : <Sparkle />}</span><div><b>{item.title}</b><p>{item.message}</p>{item.requiresConfirmation && item.action.type !== "safety-hold" && item.action.type !== "none" && <button onClick={onApply}>应用调整</button>}{item.undo && onUndo && <button className="text-button" onClick={onUndo}>撤销调整</button>}</div></article>;
 }
 
 function CoachPage({ snapshot, activeSession, update, setToast }: { snapshot: AppSnapshot; activeSession: WorkoutSession | null; update: (fn: (draft: AppSnapshot) => void) => void; setToast: (text: string) => void }) {
@@ -264,6 +300,7 @@ function CoachPage({ snapshot, activeSession, update, setToast }: { snapshot: Ap
     if (!advice || !activeSession) return;
     update((draft) => {
       const session = draft.workoutSessions.find((item) => item.id === activeSession.id); if (!session) return;
+      const undo = { exercises: structuredClone(session.exercises), restEndsAt: session.restEndsAt, restNotificationId: session.restNotificationId ?? null };
       for (const action of advice.actions) {
         if (action.type === "change_weight") { const exercise = session.exercises.find((item) => item.id === action.exerciseId || item.guideId === action.exerciseId); if (exercise?.startingWeightKg) exercise.startingWeightKg = Math.round(exercise.startingWeightKg * (1 + action.deltaPercent / 100) * 2) / 2; }
         if (action.type === "change_sets") { const exercise = session.exercises.find((item) => item.id === action.exerciseId || item.guideId === action.exerciseId); if (exercise) exercise.sets = action.sets; }
@@ -271,13 +308,25 @@ function CoachPage({ snapshot, activeSession, update, setToast }: { snapshot: Ap
         if (action.type === "stop") { session.status = "safety-hold"; session.safetyHold = { active: true, reasons: [action.reason], createdAt: new Date().toISOString() }; }
         if (action.type === "substitute") { const exercise = session.exercises.find((item) => item.id === action.fromExerciseId || item.guideId === action.fromExerciseId); const replacement = EXERCISE_GUIDE_BY_ID.get(action.toExerciseId); if (exercise && replacement) { exercise.replacementFor = exercise.guideId; exercise.guideId = replacement.id; exercise.name = replacement.name; } }
       }
-    }); setAdvice(null); setImportText(""); setToast("ChatGPT 调整已应用，可在训练页查看");
+      if (advice.actions.some((action) => action.type !== "keep")) session.recommendations.unshift({ id: uid("chatgpt-adjustment"), severity: "info", source: "readiness", title: "ChatGPT 调整已应用", message: "下一组开始前可在训练页撤销本次调整。", action: { type: "none" }, requiresConfirmation: false, createdAt: new Date().toISOString(), appliedAt: new Date().toISOString(), undo });
+    }); setAdvice(null); setImportText(""); setToast("ChatGPT 调整已应用，可在训练页撤销");
   };
   const messages = snapshot.coachMessages.slice(-12);
   return <><PageIntro eyebrow="本地实时教练" title="把当下情况告诉我" text="规则在本机运行，不冒充AI；离线也能给出组间建议。" />
     <section className="coach-chat"><div className="coach-identity"><span className="brand-mark mini"><Brain weight="fill" /></span><div><b>SteadyCut 本地教练</b><small><span className="status-dot" />离线可用 · 规则引擎</small></div></div><div className="message-list">{messages.length === 0 && <div className="coach-message"><p>训练前告诉我睡眠、时间和不适；训练中告诉我重量、RIR或器械情况。</p></div>}{messages.map((message) => <div key={message.id} className={message.role === "user" ? "user-message" : "coach-message"}><p>{message.text}</p><small>{new Date(message.createdAt).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" })}</small></div>)}</div><div className="quick-prompts">{quick.map((item) => <button key={item} onClick={() => send(item)}>{item}</button>)}</div><div className="chat-input"><textarea rows={2} placeholder="例如：这一组50kg只做了5次，RIR 0" value={text} onChange={(event) => setText(event.target.value)} /><button className="primary-icon" onClick={() => send()} aria-label="发送"><ArrowRight /></button></div></section>
     <section className="chatgpt-bridge"><div className="bridge-head"><span className="bridge-logo"><Sparkle weight="fill" /></span><div><span className="eyebrow">Plus 手动桥接</span><h2>问你的私人 ChatGPT</h2></div><LockKey /></div><p>软件只整理最少必要信息。你确认后复制并打开私人 GPT；回复不会自动读取或修改数据。</p><button className="secondary-button full" onClick={openHandoff}><ClipboardText />生成发送预览</button>{handoff && <div className="handoff-panel"><textarea readOnly rows={9} value={handoff} /><div className="button-row"><button onClick={async () => { const ok = await copyText(handoff); setToast(ok ? "内容已复制" : "复制失败，请长按文本复制"); }}>复制内容</button><button className="primary-small" onClick={() => snapshot.settings.chatGptUrl ? window.open(snapshot.settings.chatGptUrl, "_blank", "noopener") : go("more")}>{snapshot.settings.chatGptUrl ? "打开私人 GPT" : "先设置链接"}</button></div></div>}<details><summary>导入 ChatGPT 调整代码</summary><textarea rows={6} placeholder="粘贴包含 STEADYCUT_ADVICE_V1 的回复" value={importText} onChange={(event) => setImportText(event.target.value)} /><button className="secondary-button" disabled={!activeSession || !importText} onClick={() => { try { setAdvice(parseImportedAdvice(importText, activeSession?.id ?? "", activeSession ?? undefined)); } catch (reason) { setToast(reason instanceof Error ? reason.message : "无法解析建议"); } }}>严格校验</button></details>{advice && <div className="advice-preview"><span>待确认调整</span><h3>{advice.summary}</h3>{advice.actions.map((action, index) => <code key={index}>{JSON.stringify(action)}</code>)}<div className="button-row"><button onClick={() => setAdvice(null)}>取消</button><button className="primary-small" onClick={applyAdvice}>确认应用</button></div></div>}</section>
+    <WeeklyReview snapshot={snapshot} />
   </>;
+}
+
+function WeeklyReview({ snapshot }: { snapshot: AppSnapshot }) {
+  const since = Date.now() - 7 * 86_400_000;
+  const sessions = snapshot.workoutSessions.filter((item) => item.status === "completed" && new Date(item.completedAt ?? item.startedAt).getTime() >= since);
+  const measurements = snapshot.measurements.filter((item) => new Date(`${item.date}T12:00:00`).getTime() >= since && item.weightKg !== null);
+  const average = measurements.length ? measurements.reduce((sum, item) => sum + (item.weightKg ?? 0), 0) / measurements.length : null;
+  const proteinDays = Object.values(snapshot.dailyLogs).filter((item) => new Date(`${item.date}T12:00:00`).getTime() >= since && (item.proteinG ?? 0) >= snapshot.profile.proteinTargetG).length;
+  const verdict = sessions.length >= 4 ? "训练执行很稳，继续按趋势而不是单日体重调整。" : sessions.length >= 2 ? "本周先把剩余训练日完成，力量稳定比额外加跑更优先。" : "下周先锁定四个训练日；从最短的30分钟核心版重新建立节奏。";
+  return <section className="weekly-review"><span className="eyebrow">本地周复盘</span><h2>本周执行与下一步</h2><div className="summary-grid"><div><b>{sessions.length}/4</b><small>完成训练</small></div><div><b>{average?.toFixed(1) ?? "—"}</b><small>7日均重 kg</small></div><div><b>{proteinDays}/7</b><small>蛋白达标天</small></div></div><p>{verdict}</p></section>;
 }
 
 function NutritionPage({ snapshot, update }: { snapshot: AppSnapshot; update: (fn: (draft: AppSnapshot) => void) => void }) {
@@ -323,16 +372,18 @@ function LibraryPage({ onGuide }: { onGuide: (guide: ExerciseGuide) => void }) {
 }
 
 function MorePage({ snapshot, update, replace, installAvailable, setToast }: { snapshot: AppSnapshot; update: (fn: (draft: AppSnapshot) => void) => void; replace: (next: AppSnapshot) => Promise<void>; installAvailable: boolean; setToast: (text: string) => void }) {
-  const [password, setPassword] = useState(""); const [importFile, setImportFile] = useState<File | null>(null); const fileRef = useRef<HTMLInputElement>(null);
+  const [password, setPassword] = useState(""); const [importFile, setImportFile] = useState<File | null>(null); const [pendingRestore, setPendingRestore] = useState<AppSnapshot | null>(null); const fileRef = useRef<HTMLInputElement>(null);
   const exportData = async () => { try { const envelope = await encryptBackup(snapshot, password); downloadBackup(envelope); setToast("加密备份已下载"); } catch (reason) { setToast(reason instanceof Error ? reason.message : "备份失败"); } };
-  const importData = async () => { if (!importFile) return; try { const next = await decryptBackup(await importFile.text(), password); await replace(next); setToast("备份已恢复"); } catch (reason) { setToast(reason instanceof Error ? reason.message : "恢复失败"); } };
+  const prepareImport = async () => { if (!importFile) return; try { setPendingRestore(await decryptBackup(await importFile.text(), password)); setToast("备份已验证，请确认是否覆盖当前设备数据"); } catch (reason) { setToast(reason instanceof Error ? reason.message : "恢复失败"); } };
+  const confirmImport = async () => { if (!pendingRestore) return; await replace(pendingRestore); setPendingRestore(null); setImportFile(null); setToast("备份已恢复"); };
+  const exportLegacy = () => { const raw = getLegacyBackup(); if (!raw) { setToast("没有检测到旧版原始数据"); return; } const blob = new Blob([raw], { type: "application/json" }); const url = URL.createObjectURL(blob); const anchor = document.createElement("a"); anchor.href = url; anchor.download = `SteadyCut-v1-original-${today()}.json`; anchor.click(); setTimeout(() => URL.revokeObjectURL(url), 1_000); setToast("旧版原始数据已导出"); };
   const setWeight = (value: number | null) => update((draft) => { draft.profile.startWeightKg = value; if (value) draft.profile.calorieTargetKcal = calculateCalories(value, draft.profile.heightCm, draft.profile.age); });
   return <><PageIntro eyebrow="更多 · 设备本地" title="设置、安装与备份" text="无账号、无云同步；网页与APK通过加密文件迁移。" />
     <section className="settings-card"><div className="section-heading"><div><span className="eyebrow">个人资料</span><h2>起始基线</h2></div></div><div className="input-grid two"><NumberField label="准确体重" unit="kg" value={snapshot.profile.startWeightKg} onChange={setWeight} /><NumberField label="肚脐腰围" unit="cm" value={snapshot.profile.startWaistCm} onChange={(value) => update((draft) => { draft.profile.startWaistCm = value; })} /></div><label className="note-field">称呼<input value={snapshot.profile.name} placeholder="可选" onChange={(event) => update((draft) => { draft.profile.name = event.target.value; })} /></label><div className="calorie-recalc"><span>起始热量</span><strong>{snapshot.profile.calorieTargetKcal} kcal</strong><small>{snapshot.profile.startWeightKg && (snapshot.profile.startWeightKg < 68 || snapshot.profile.startWeightKg > 80) ? "已根据实际体重重算" : "68–80kg默认值"}</small></div></section>
     <section className="settings-card"><span className="eyebrow">外观与训练</span><h2>设备体验</h2><div className="theme-picker"><button className={snapshot.settings.theme === "dark" ? "active" : ""} onClick={() => update((draft) => { draft.settings.theme = "dark"; })}><Moon />深色</button><button className={snapshot.settings.theme === "light" ? "active" : ""} onClick={() => update((draft) => { draft.settings.theme = "light"; })}><Sun />亮色</button><button className={snapshot.settings.theme === "system" ? "active" : ""} onClick={() => update((draft) => { draft.settings.theme = "system"; })}><GearSix />跟随系统</button></div><Toggle label="减少动画" value={snapshot.settings.reduceMotion} onChange={(value) => update((draft) => { draft.settings.reduceMotion = value; })} /><Toggle label="训练时保持屏幕常亮" value={snapshot.settings.keepScreenAwake} onChange={(value) => update((draft) => { draft.settings.keepScreenAwake = value; })} /><Toggle label="组间震动" value={snapshot.settings.vibration} onChange={(value) => update((draft) => { draft.settings.vibration = value; })} /><Toggle label="休息结束通知" value={snapshot.settings.restNotifications} onChange={(value) => update((draft) => { draft.settings.restNotifications = value; })} /></section>
     <section className="settings-card install-card"><span className="eyebrow">安装状态</span><h2>像软件一样打开</h2><p>安装后可从主屏幕启动；训练核心和29套教学在飞行模式下仍能打开。</p><button className="primary-button full" onClick={async () => { const result = await requestPwaInstall(); setToast(result === "manual" ? "请用浏览器菜单选择“添加到主屏幕”" : result === "installed" ? "安装完成" : "已取消安装"); }}><DownloadSimple />{installAvailable ? "安装 SteadyCut" : "查看安装方式"}</button></section>
     <section className="settings-card"><span className="eyebrow">ChatGPT Plus 桥接</span><h2>私人 GPT 链接</h2><p>只保存链接，不保存账号、密码或对话。</p><label className="note-field"><input type="url" value={snapshot.settings.chatGptUrl} placeholder="https://chatgpt.com/g/g-..." onChange={(event) => update((draft) => { draft.settings.chatGptUrl = event.target.value; })} /></label></section>
-    <section className="settings-card"><span className="eyebrow">AES-GCM 加密备份</span><h2>网页与APK迁移</h2><p>密码至少8个字符；忘记密码后无法恢复，这是本地加密的安全边界。</p><label className="note-field">备份密码<input type="password" value={password} placeholder="至少8个字符" onChange={(event) => setPassword(event.target.value)} /></label><div className="button-row"><button className="secondary-button" onClick={exportData}><DownloadSimple />导出</button><button className="secondary-button" onClick={() => fileRef.current?.click()}><UploadSimple />选择备份</button></div><input hidden ref={fileRef} type="file" accept=".steadycut,application/json" onChange={(event) => setImportFile(event.target.files?.[0] ?? null)} />{importFile && <div className="selected-file"><LockKey /><span>{importFile.name}</span><button onClick={importData}>解密恢复</button></div>}</section>
+    <section className="settings-card"><span className="eyebrow">AES-GCM 加密备份</span><h2>网页与APK迁移</h2><p>密码至少8个字符；忘记密码后无法恢复，这是本地加密的安全边界。</p><label className="note-field">备份密码<input type="password" value={password} placeholder="至少8个字符" onChange={(event) => setPassword(event.target.value)} /></label><div className="button-row"><button className="secondary-button" onClick={exportData}><DownloadSimple />导出当前数据</button><button className="secondary-button" onClick={() => fileRef.current?.click()}><UploadSimple />选择备份</button></div><input hidden ref={fileRef} type="file" accept=".steadycut,application/json" onChange={(event) => { setImportFile(event.target.files?.[0] ?? null); setPendingRestore(null); }} />{importFile && <div className="selected-file"><LockKey /><span>{importFile.name}</span><button onClick={prepareImport}>解密并预览</button></div>}{pendingRestore && <div className="restore-confirm"><Warning /><div><b>确认覆盖当前设备数据？</b><p>已验证备份格式。建议先导出当前数据；确认后才能恢复。</p><div className="button-row"><button onClick={exportData}>先导出当前数据</button><button className="primary-small" onClick={confirmImport}>确认覆盖并恢复</button><button onClick={() => setPendingRestore(null)}>取消</button></div></div></div>}<button className="text-button centered" onClick={exportLegacy}>导出保留的 v1 原始数据</button></section>
     <section className="privacy-card"><ShieldCheck size={24} /><div><b>隐私边界</b><p>训练与身体数据默认只在当前设备。清除浏览器数据会丢失记录，请定期导出加密备份。</p></div></section><p className="medical-disclaimer">SteadyCut 提供一般健身与营养指导，不做医疗诊断。肾病、肝病、痛风、进食障碍或运动禁忌请先咨询专业人员。</p>
   </>;
 }

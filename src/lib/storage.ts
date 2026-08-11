@@ -147,6 +147,7 @@ function migrateWorkouts(source: Record<string, unknown>): WorkoutSession[] {
       currentSetIndex: 0,
       setEntries,
       restEndsAt: null,
+      restNotificationId: null,
       safetyHold: Boolean(item.pain)
         ? { active: false, reasons: ["旧版疼痛标记"], createdAt: startedAt }
         : null,

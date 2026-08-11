@@ -1,11 +1,11 @@
 {
   "name": "steadycut-coach",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build:web": "vite build",
+    "build:web": "node scripts/build-web.mjs",
     "build": "node build.mjs",
     "preview": "vite preview",
     "test": "vitest run",

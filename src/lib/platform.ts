@@ -44,17 +44,37 @@ export async function registerServiceWorker() {
 }
 
 export async function notifyRestFinished() {
-  if (isNative()) {
-    const { LocalNotifications } = await import("@capacitor/local-notifications");
-    const permission = await LocalNotifications.requestPermissions();
-    if (permission.display !== "granted") return false;
-    await LocalNotifications.schedule({ notifications: [{ id: Date.now() % 2_000_000_000, title: "休息结束", body: "检查动作设置，准备下一组。", schedule: { at: new Date(Date.now() + 500) }, sound: undefined }] });
-    return true;
-  }
+  // Native reminders are scheduled when the rest starts, so they still fire while locked.
+  if (isNative()) return true;
   if (!("Notification" in window)) return false;
   const permission = await Notification.requestPermission();
   if (permission !== "granted") return false;
   new Notification("休息结束", { body: "检查动作设置，准备下一组。", icon: `${import.meta.env.BASE_URL}icons/icon.svg` });
+  return true;
+}
+
+/** Schedules the native reminder at the actual rest end, before the app is locked. */
+export async function scheduleRestNotification(restEndsAt: string, id: number) {
+  if (!isNative()) return false;
+  const { LocalNotifications } = await import("@capacitor/local-notifications");
+  const permission = await LocalNotifications.requestPermissions();
+  if (permission.display !== "granted") return false;
+  await LocalNotifications.schedule({
+    notifications: [{
+      id,
+      title: "休息结束",
+      body: "检查动作设置，准备下一组。",
+      schedule: { at: new Date(restEndsAt), allowWhileIdle: true },
+      sound: undefined,
+    }],
+  });
+  return true;
+}
+
+export async function cancelRestNotification(id: number | null | undefined) {
+  if (!isNative() || id === null || id === undefined) return false;
+  const { LocalNotifications } = await import("@capacitor/local-notifications");
+  await LocalNotifications.cancel({ notifications: [{ id }] });
   return true;
 }
 

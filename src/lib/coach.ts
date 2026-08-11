@@ -1,4 +1,5 @@
 import { buildWorkoutPlan, getWeekPolicy } from "../data/program";
+import { EXERCISE_GUIDE_BY_ID } from "../data/exercises";
 import type {
   CoachRecommendation,
   ReadinessCheck,
@@ -18,6 +19,16 @@ const STOP_FEELINGS = new Set<SessionFeeling>([
   "dizziness",
   "unusual-shortness-of-breath",
 ]);
+
+const EQUIPMENT_REPLACEMENTS: Record<string, { keywords: string[]; replacementId: string }> = {
+  "barbell-bench-press": { keywords: ["卧推架", "杠铃卧推", "平板凳"], replacementId: "machine-chest-press" },
+  "back-squat": { keywords: ["深蹲架", "杠铃架", "深蹲"], replacementId: "leg-press" },
+  "hack-squat": { keywords: ["哈克"], replacementId: "leg-press" },
+  "lat-pulldown": { keywords: ["高位下拉"], replacementId: "pull-up" },
+  "pull-up": { keywords: ["引体", "单杠"], replacementId: "lat-pulldown" },
+  "seated-leg-curl": { keywords: ["腿弯举"], replacementId: "prone-leg-curl" },
+  "rope-triceps-pushdown": { keywords: ["绳索", "下压器"], replacementId: "straight-bar-pushdown" },
+};
 
 const rec = (
   severity: CoachRecommendation["severity"],
@@ -72,6 +83,20 @@ export function startWorkoutSession(day: WorkoutDayId, week: number, readiness: 
   const recommendations = evaluateReadiness(readiness, week);
   const safety = recommendations.find((item) => item.action.type === "safety-hold");
   const exercises = buildWorkoutPlan(day, { week, timeBudgetMinutes: readiness.timeBudgetMinutes });
+  const unavailable = readiness.unavailableEquipment.join(" ").toLowerCase();
+  for (const exercise of exercises) {
+    const replacement = EQUIPMENT_REPLACEMENTS[exercise.guideId];
+    if (!replacement || !replacement.keywords.some((keyword) => unavailable.includes(keyword))) continue;
+    const guide = EXERCISE_GUIDE_BY_ID.get(replacement.replacementId);
+    if (!guide) continue;
+    recommendations.push(rec(
+      "adjust",
+      "equipment",
+      `${exercise.name}器械受限`,
+      `检测到器械限制，建议改为${guide.name}；请确认后应用，重量需要重新选择无痛起始值。`,
+      { type: "replace-exercise", exerciseId: exercise.id, replacementId: guide.id },
+    ));
+  }
   const previous = history.find((item) => item.workoutDayId === day && item.status === "completed");
   if (previous) {
     for (const exercise of exercises) {
@@ -99,6 +124,7 @@ export function startWorkoutSession(day: WorkoutDayId, week: number, readiness: 
     currentSetIndex: 0,
     setEntries: [],
     restEndsAt: null,
+    restNotificationId: null,
     safetyHold: safety ? { active: true, reasons: [safety.message], createdAt: timestamp } : null,
     recommendations,
   };

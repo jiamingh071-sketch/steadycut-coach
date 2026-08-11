@@ -1,5 +1,5 @@
-const CACHE = "steadycut-v2-20260809";
-const CORE = ["./", "./index.html", "./manifest.webmanifest", "./icons/icon.svg", "./icons/icon-maskable.svg"];
+const CACHE = "__STEADYCUT_CACHE_VERSION__";
+const CORE = __STEADYCUT_CORE_ASSETS__;
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(CORE)).then(() => self.skipWaiting()));
 });

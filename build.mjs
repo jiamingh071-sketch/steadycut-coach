@@ -8,7 +8,7 @@ const dist = resolve(root, "dist");
 const client = resolve(dist, "client");
 
 await rm(dist, { recursive: true, force: true });
-execFileSync(process.execPath, [resolve(root, "node_modules", "vite", "bin", "vite.js"), "build"], {
+execFileSync(process.execPath, [resolve(root, "scripts", "build-web.mjs")], {
   cwd: root,
   stdio: "inherit",
 });

@@ -8,7 +8,7 @@ export default defineConfig({
     outDir: "dist/client",
     emptyOutDir: false,
     target: "es2022",
-    sourcemap: true,
+    sourcemap: false,
   },
   test: {
     environment: "jsdom",

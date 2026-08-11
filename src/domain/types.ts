@@ -9,6 +9,7 @@ export type SessionStatus =
   | "warmup"
   | "active"
   | "rest"
+  | "summary"
   | "safety-hold"
   | "completed"
   | "abandoned";
@@ -129,6 +130,12 @@ export interface CoachRecommendation {
     | { type: "none" };
   requiresConfirmation: boolean;
   createdAt: ISODateTime;
+  appliedAt?: ISODateTime;
+  undo?: {
+    exercises: SessionExercise[];
+    restEndsAt: ISODateTime | null;
+    restNotificationId: number | null;
+  };
 }
 
 export interface SafetyHold {
@@ -152,6 +159,8 @@ export interface WorkoutSession {
   currentSetIndex: number;
   setEntries: SetEntry[];
   restEndsAt: ISODateTime | null;
+  /** Android uses this stable ID to cancel or replace a scheduled rest notification. */
+  restNotificationId?: number | null;
   safetyHold: SafetyHold | null;
   recommendations: CoachRecommendation[];
 }

@@ -17,6 +17,12 @@ describe("本地教练规则", () => {
     expect(recommendations.some((item) => item.source === "time")).toBe(true);
   });
 
+  it("器械限制生成可确认的同模式替换建议", () => {
+    const session = startWorkoutSession("lowerA", 2, { ...defaultReadiness(), unavailableEquipment: ["深蹲架被占"] });
+    expect(session.exercises[0].guideId).toBe("back-squat");
+    expect(session.recommendations.some((item) => item.action.type === "replace-exercise" && item.action.replacementId === "leg-press")).toBe(true);
+  });
+
   it("RIR 0、次数不足或动作不稳建议下一组减重", () => {
     const set: SetEntry = { id: "s", exerciseId: "bench", setNumber: 1, targetWeightKg: 55, targetReps: 6, targetRir: 2, actualWeightKg: 55, actualReps: 5, actualRir: 0, stability: "unstable", feeling: "none", symptomArea: "", completedAt: new Date().toISOString() };
     expect(evaluateSetFeedback(set, "卧推")[0].action).toMatchObject({ type: "reduce-load", percent: 10 });
