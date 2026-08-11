@@ -74,4 +74,4 @@ await mkdir(resolve(dist, "server"), { recursive: true });
 await mkdir(resolve(dist, ".openai"), { recursive: true });
 await writeFile(resolve(dist, "server", "index.js"), worker, "utf8");
 await cp(resolve(root, ".openai", "hosting.json"), resolve(dist, ".openai", "hosting.json"));
-console.log(`Built SteadyCut 2.0 (${files.size} static assets, ${Buffer.byteLength(worker)} byte worker)`);
+console.log(`Built SteadyCut 2.1 (${files.size} static assets, ${Buffer.byteLength(worker)} byte worker)`);

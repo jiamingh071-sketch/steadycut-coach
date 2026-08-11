@@ -49,6 +49,7 @@ const NAV: Array<{ id: Route; label: string; icon: typeof House }> = [
   { id: "workout", label: "训练", icon: Barbell }, { id: "nutrition", label: "饮食", icon: BowlFood },
   { id: "progress", label: "进度", icon: ChartLineUp },
 ];
+const isNavActive = (route: Route, itemId: Route) => route === itemId || (itemId === "workout" && route === "library");
 
 export default function App() {
   const { snapshot, update, replace, error, clearError } = useSnapshot();
@@ -82,7 +83,13 @@ export default function App() {
   const activeSession = snapshot.workoutSessions.find((item) => item.id === snapshot.activeSessionId) ?? null;
 
   return (
-    <div className="app-shell">
+    <div className="app-frame">
+      <aside className="desktop-rail" aria-label="电脑端导航">
+        <button className="rail-brand" onClick={() => go("today")} aria-label="返回今天" title="SteadyCut"><Barbell weight="bold" /></button>
+        <div className="rail-nav">{NAV.map((item) => { const Icon = item.icon; const active = isNavActive(route, item.id); return <button key={item.id} className={active ? "active" : ""} aria-current={active ? "page" : undefined} onClick={() => go(item.id)} aria-label={item.label} title={item.label}><Icon size={23} weight={active ? "fill" : "regular"} /><span>{item.label}</span></button>; })}</div>
+        <button className={route === "more" ? "rail-more active" : "rail-more"} onClick={() => go("more")} aria-current={route === "more" ? "page" : undefined} aria-label="更多设置" title="更多设置"><GearSix size={22} /></button>
+      </aside>
+      <div className="app-shell">
       <header className="app-header">
         <button className="brand-button" onClick={() => go("today")} aria-label="返回今天"><span className="brand-mark mini"><Barbell weight="bold" /></span><span><b>STEADYCUT</b><small>本地私人教练</small></span></button>
         <div className="header-actions"><span className="week-chip">W{week}<small>/12</small></span><button className="icon-button" aria-label="更多设置" onClick={() => go("more")}><GearSix size={22} /></button></div>
@@ -98,9 +105,10 @@ export default function App() {
         {route === "more" && <MorePage snapshot={snapshot} update={update} replace={replace} installAvailable={installAvailable} setToast={setToast} />}
       </main>
 
-      <nav className="bottom-nav" aria-label="主导航">{NAV.map((item) => { const Icon = item.icon; const active = route === item.id || (item.id === "workout" && route === "library"); return <button key={item.id} className={active ? "active" : ""} aria-current={active ? "page" : undefined} onClick={() => go(item.id)}><Icon size={23} weight={active ? "fill" : "regular"} /><span>{item.label}</span></button>; })}</nav>
+      <nav className="bottom-nav" aria-label="主导航">{NAV.map((item) => { const Icon = item.icon; const active = isNavActive(route, item.id); return <button key={item.id} className={active ? "active" : ""} aria-current={active ? "page" : undefined} onClick={() => go(item.id)}><Icon size={23} weight={active ? "fill" : "regular"} /><span>{item.label}</span></button>; })}</nav>
       {guide && <ExerciseGuideModal guide={guide} onClose={() => setGuide(null)} />}
       {(toast || error) && <div className="toast" role="status" onClick={clearError}>{error || toast}</div>}
+      </div>
     </div>
   );
 }
@@ -122,7 +130,8 @@ function TodayPage({ snapshot, week, activeSession, onGuide }: { snapshot: AppSn
     <PageIntro eyebrow={`${new Date().toLocaleDateString("zh-CN", { month: "long", day: "numeric", weekday: "long" })} · 第${week}周`} title={snapshot.profile.name ? `${snapshot.profile.name}，今天稳住节奏` : "今天稳住节奏"} text="减脂靠趋势，保肌靠训练质量。" />
     {!weight && <section className="alert-card amber"><Warning size={22} /><div><strong>先完成首次称重</strong><p>在健身房记录准确体重与肚脐水平腰围。只有体重在68–80kg时，2150 kcal才作为默认起点。</p></div><button onClick={() => go("more")}>去录入</button></section>}
     <section className="hero-workout">
-      <div className="hero-grid"><div><span className="status-dot" />{activeSession ? "训练可恢复" : "下次训练"}</div><span>{getWeekPolicy(week).label}</span></div>
+      <div className="hero-grid"><div><span className="status-dot" />{activeSession ? "训练可恢复" : "下次训练"}</div><span className="hero-week">W{week} / 12</span></div>
+      <div className="hero-week-progress"><span>{getWeekPolicy(week).label}</span><div className="progress-track"><i style={{ width: `${(week / 12) * 100}%` }} /></div></div>
       <h2>{activeSession ? PROGRAM[activeSession.workoutDayId].title : selected.title}</h2>
       <p>{activeSession ? `已自动保存至第${activeSession.currentExerciseIndex + 1}个动作` : `${selected.exercises.length}个动作 · 按可用时间自动精简`}</p>
       <button className="primary-button" onClick={() => go("workout")}>{activeSession ? "继续训练" : "训练前检查"}<ArrowRight weight="bold" /></button>
@@ -153,10 +162,12 @@ function WorkoutPage({ snapshot, week, activeSession, update, onGuide, setToast,
   }} />;
   const selected = PROGRAM[snapshot.selectedWorkoutDay];
   const history = snapshot.workoutSessions.filter((item) => item.status === "completed").slice(0, 5);
+  const exerciseGroups = ([1, 2, 3] as const).map((priority) => ({ priority, items: selected.exercises.filter((item) => item.priority === priority) })).filter((group) => group.items.length > 0);
+  const priorityLabels: Record<1 | 2 | 3, string> = { 1: "核心动作", 2: "主要辅助", 3: "可选收尾" };
   return <>
     <PageIntro eyebrow="训练 · 四天分化" title="按恢复状态执行" text="正式组大多保留2次余力；第6、12周自动减量。" action={<button className="library-button" onClick={() => go("library")}><BookOpen />动作库</button>} />
     <div className="segmented day-selector">{PROGRAM_ORDER.map((id) => <button key={id} className={snapshot.selectedWorkoutDay === id ? "active" : ""} onClick={() => update((draft) => { draft.selectedWorkoutDay = id; })}>{PROGRAM[id].shortName}</button>)}</div>
-    <section className="plan-card"><div className="plan-head"><div><span>{getWeekPolicy(week).label}</span><h2>{selected.title}</h2></div><strong>{selected.exercises.reduce((sum, item) => sum + item.sets, 0)}<small>组</small></strong></div><div className="plan-list">{selected.exercises.map((item, index) => <button key={item.id} onClick={() => { const found = EXERCISE_GUIDE_BY_ID.get(item.guideId); if (found) onGuide(found); }}><span>{index + 1}</span><div><b>{item.name}</b><small>{item.sets} × {item.repMin}–{item.repMax} · RIR {week === 1 ? 3 : 2}</small></div><BookOpen /></button>)}</div><button className="primary-button full" onClick={() => setPrecheck(true)}><Lightning weight="fill" />开始训练前检查</button></section>
+    <section className="plan-card"><div className="plan-head"><div><span>{getWeekPolicy(week).label}</span><h2>{selected.title}</h2></div><strong>{selected.exercises.reduce((sum, item) => sum + item.sets, 0)}<small>组</small></strong></div><div className="plan-list">{exerciseGroups.map((group) => <section className={`plan-group priority-${group.priority}`} key={group.priority}><span className="plan-group-label">{priorityLabels[group.priority]}</span>{group.items.map((item) => { const index = selected.exercises.indexOf(item); return <button key={item.id} onClick={() => { const found = EXERCISE_GUIDE_BY_ID.get(item.guideId); if (found) onGuide(found); }}><span>{index + 1}</span><div><b>{item.name}</b><small>{item.sets} × {item.repMin}–{item.repMax} · RIR {week === 1 ? 3 : 2}</small></div><BookOpen /></button>; })}</section>)}</div><button className="primary-button full" onClick={() => setPrecheck(true)}><Lightning weight="fill" />开始训练前检查</button></section>
     <section className="section-block"><div className="section-heading"><div><span className="eyebrow">历史</span><h2>最近完成</h2></div></div>{history.length ? <div className="history-list">{history.map((item) => <article key={item.id}><CheckCircle weight="fill" /><div><b>{PROGRAM[item.workoutDayId].shortName}</b><span>{new Date(item.startedAt).toLocaleDateString("zh-CN")} · {item.setEntries.filter((set) => set.completedAt).length}组</span></div><strong>完成</strong></article>)}</div> : <div className="empty-state"><Barbell /><p>第一条完成记录会出现在这里。</p></div>}</section>
   </>;
 }

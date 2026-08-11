@@ -238,7 +238,7 @@ export function createDefaultSnapshot(now = new Date()): AppSnapshot {
     selectedWorkoutDay: "upperA",
     coachMessages: [],
     settings: {
-      theme: "system",
+      theme: "dark",
       reduceMotion: false,
       chatGptUrl: "",
       restNotifications: false,
