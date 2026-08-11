@@ -1,0 +1,22 @@
+{
+  "name": "SteadyCut 私人减脂保肌教练",
+  "short_name": "SteadyCut",
+  "description": "12周离线优先的训练、饮食与进度教练",
+  "lang": "zh-CN",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "portrait-primary",
+  "background_color": "#121311",
+  "theme_color": "#171814",
+  "categories": ["fitness", "health", "lifestyle"],
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icons/icon-maskable.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "开始训练", "short_name": "训练", "url": "./#workout", "icons": [{ "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }] },
+    { "name": "动作教学", "short_name": "动作库", "url": "./#library", "icons": [{ "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }] }
+  ]
+}

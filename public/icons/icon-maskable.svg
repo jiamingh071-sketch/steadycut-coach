@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="SteadyCut">
+  <rect width="512" height="512" fill="#171814"/>
+  <circle cx="256" cy="256" r="142" fill="#262820"/>
+  <path d="M142 276h52v-62h32v-40h60v40h32v62h52v38h-52v32h-32v-66h-60v66h-32v-32h-52z" fill="#f5b942"/>
+</svg>
